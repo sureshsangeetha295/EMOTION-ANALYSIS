@@ -1,0 +1,162 @@
+:root {
+  --bg: #f5f4f0;
+  --panel: #ffffff;
+  --border: #e2e0da;
+  --accent: #e8501a;
+  --accent2: #f97316;
+  --text: #1a1a1a;
+  --muted: #888;
+  --live-green: #22c55e;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── JS ghost elements — strictly invisible ── */
+.js-ghost {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  width: 0 !important; height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TOPBAR
+   ══════════════════════════════════════════════════════════════════════════ */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 48px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 100;
+}
+
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; }
+.logo-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--accent); display: grid; place-items: center;
+  color: white; font-size: 0.95rem;
+}
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+.live-badge {
+  display: none;
+  align-items: center; gap: 6px;
+  background: #dcfce7; color: #15803d;
+  border: 1px solid #bbf7d0;
+  border-radius: 20px; padding: 4px 12px; font-size: 0.78rem; font-weight: 600;
+}
+.live-badge.active { display: flex; }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--live-green); animation: pulse 1.2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.back-btn {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 14px; cursor: pointer; font-size: 0.82rem; color: var(--muted);
+  display: inline-flex; align-items: center; transition: background 0.15s;
+}
+.back-btn:hover { background: var(--border); color: var(--text); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HAMBURGER BUTTON — hidden on desktop, visible on mobile
+   ══════════════════════════════════════════════════════════════════════════ */
+.hamburger-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.hamburger-btn:hover { background: var(--bg); }
+.hamburger-btn span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+  transform-origin: center;
+}
+/* Animated X when open */
+.hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MOBILE NAV DRAWER — slides in from top on mobile
+   ══════════════════════════════════════════════════════════════════════════ */
+.mobile-nav-drawer {
+  display: none; /* shown via JS class on mobile */
+  position: fixed;
+  top: 42px; /* sits below topbar */
+  left: 0; right: 0;
+  background: var(--panel);
+  border-bottom: 2px solid var(--border);
+  z-index: 99;
+  padding: 8px 0 12px;
+  transform: translateY(-110%);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+}
+.mobile-nav-drawer.open {
+  transform: translateY(0);
+}
+.mobile-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  transition: background 0.12s;
+  border-radius: 0;
+}
+.mobile-nav-item:hover { background: var(--bg); }
+.mobile-nav-item .nav-icon { font-size: 1rem; width: 22px; text-align: center; flex-shrink: 0; }
+.mobile-nav-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 16px;
+}
+/* Overlay that closes drawer on tap-outside */
+.mobile-nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 98;
+  background: rgba(0,0,0,0.18);
+}
+.mobile-nav-overlay.open { display: block; }
+

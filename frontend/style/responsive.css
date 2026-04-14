@@ -1,0 +1,580 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   1280px+  → large desktop (default)
+   1024px   → small laptop / tablet landscape
+   768px    → tablet portrait   ← hamburger activates here
+   480px    → large mobile (phablet)
+   360px    → small mobile
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Small laptop / tablet landscape (≤1280px) ── */
+@media (max-width: 1280px) {
+  .app-body {
+    grid-template-columns: 42fr 58fr;
+  }
+  .prob-label { width: 80px; }
+}
+
+/* ── Tablet landscape / small laptop (≤1024px) ── */
+@media (max-width: 1024px) {
+  .app-body {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .topbar { padding: 0 14px; }
+  .logo { font-size: 0.98rem; }
+
+  .cam-pane { padding: 10px 10px 48px 10px; }
+  .cam-feed { border-radius: 10px; }
+
+  .breakdown-pane,
+  .prob-pane,
+  .notes-pane { padding-bottom: 8px; }
+
+  .dominant-card { margin: 8px 12px 0; }
+  .avatar-col { width: 66px; }
+  .avatar-face, .avatar-face svg { width: 44px !important; height: 44px !important; }
+  .avatar-glow { width: 44px; height: 44px; }
+
+  .dom-name { font-size: 0.95rem; }
+  .dom-message { font-size: 0.72rem; }
+
+  .prob-row { padding: 4px 12px; }
+  .prob-label { width: 76px; font-size: 0.74rem; }
+  .prob-pct { width: 30px; font-size: 0.72rem; }
+
+  .tutor-msg { font-size: 0.72rem; }
+  .notes-pane { height: 160px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TABLET PORTRAIT (≤768px) — Hamburger menu activates
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Body becomes scrollable */
+  body {
+    height: auto;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* ── Hamburger button becomes visible ── */
+  .hamburger-btn {
+    display: flex;
+  }
+
+  /* ── Mobile drawer activates ── */
+  .mobile-nav-drawer {
+    display: block;
+    top: 44px;
+  }
+
+  /* ── Topbar: logo + hamburger only; hide crowded right-side items ── */
+  .topbar {
+    padding: 0 12px;
+    height: 44px;
+    gap: 8px;
+  }
+
+  /* Hide desktop topbar-right elements — they move into the drawer */
+  .topbar-right {
+    display: none;
+  }
+
+  /* Show back-btn and live-badge inside the drawer via .mobile-nav-item */
+  /* (JS should mirror these into the drawer or they can be .mobile-nav-item elements) */
+
+  .logo { font-size: 0.92rem; gap: 7px; }
+  .logo-icon { width: 26px; height: 26px; font-size: 0.85rem; }
+  .nav-greeting { font-size: 10px; padding: 2px 8px 2px 6px; }
+
+  /* ── Layout: single column, stacked ── */
+  .app-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    overflow: visible;
+    height: auto;
+  }
+
+  /* Left col: natural height, no inner scroll lock */
+  .left-col {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow: visible;
+    min-height: unset;
+  }
+
+  /* Right col: natural height */
+  .right-col {
+    overflow: visible;
+    min-height: unset;
+  }
+
+  /* Camera pane: fixed aspect ratio */
+  .cam-pane {
+    padding: 10px 10px 52px 10px;
+    min-height: 260px;
+    max-height: 340px;
+  }
+
+  /* Buttons row */
+  .btn { font-size: 11px; padding: 9px 0; }
+
+  /* Timeline pane */
+  .timeline-pane { max-height: 200px; }
+  .timeline-hdr { padding: 6px 12px 5px; }
+  .tl-stat-cell { padding: 6px 4px; }
+  .tl-stat-val { font-size: 13px; }
+  .timeline-tags { padding: 6px 10px; }
+
+  /* Breakdown */
+  .breakdown-hdr { padding: 6px 12px 5px; }
+  .dominant-card { margin: 8px 12px 0; }
+  .avatar-col { width: 60px; }
+  .avatar-face, .avatar-face svg { width: 40px !important; height: 40px !important; }
+  .avatar-glow { width: 40px; height: 40px; }
+  .dom-name { font-size: 0.88rem; }
+  .dom-message { font-size: 0.7rem; padding: 5px 8px; }
+  .message-col { padding: 6px 10px; gap: 3px; }
+
+  /* Probabilities */
+  .prob-header { padding: 6px 12px 4px; }
+  .prob-row { padding: 4px 12px; gap: 6px; }
+  .prob-label { width: 76px; font-size: 0.72rem; }
+  .prob-pct { width: 28px; font-size: 0.7rem; }
+  .prob-bar-bg { height: 5px; }
+
+  /* Notes pane */
+  .notes-pane { height: auto; min-height: 140px; max-height: 200px; }
+  .notes-hdr { padding: 6px 12px 5px; }
+  .notes-input-wrap { padding: 6px 12px 5px; }
+  .notes-list { padding: 5px 12px; }
+  .notes-textarea { height: 54px; }
+
+  /* Tutor log */
+  .tutor-log { padding: 6px 12px 8px; }
+  .tutor-msg { font-size: 0.7rem; padding: 6px 9px; }
+  .tutor-msg-tag { font-size: 9px; }
+
+  /* Touch targets */
+  .btn,
+  .back-btn,
+  .notes-add-btn,
+  .notes-save-btn,
+  .notes-cancel-btn,
+  .note-delete,
+  .hamburger-btn,
+  .mobile-nav-item {
+    min-height: 36px;
+  }
+
+  /* Slightly larger tap area for chips */
+  .tl-chip { padding: 4px 10px; }
+}
+
+/* ── Large mobile / phablet (≤480px) ── */
+@media (max-width: 480px) {
+
+  .topbar { padding: 0 10px; height: 42px; }
+  .logo { font-size: 0.88rem; gap: 6px; }
+  .logo-icon { width: 24px; height: 24px; border-radius: 6px; font-size: 0.78rem; }
+  .nav-greeting { display: none; }
+  .hamburger-btn { width: 34px; height: 34px; }
+  .mobile-nav-drawer { top: 42px; }
+
+  .cam-pane {
+    min-height: 220px;
+    max-height: 280px;
+    padding: 8px 8px 48px 8px;
+  }
+  .cam-feed { border-radius: 8px; border-width: 1.5px; }
+  .cam-overlay-tl { font-size: 0.65rem; padding: 2px 6px; }
+  .live-tag { font-size: 0.62rem; padding: 2px 6px; }
+  .detection-bar { font-size: 0.72rem; padding: 4px 10px; bottom: 36px; }
+
+  /* Buttons: 2-row grid on tiny screens */
+  .btn-row { flex-wrap: wrap; }
+  .btn { font-size: 10.5px; padding: 8px 0; min-width: 50%; }
+
+  /* Timeline */
+  .tl-stats-row { gap: 0; }
+  .tl-stat-val { font-size: 12px; }
+  .tl-stat-lbl { font-size: 8px; }
+  .tl-chip-label { font-size: 10px; }
+  .tl-track-lbl { width: 60px; font-size: 10px; }
+
+  /* Breakdown */
+  .avatar-col { width: 54px; padding: 4px; }
+  .avatar-face, .avatar-face svg { width: 36px !important; height: 36px !important; }
+  .avatar-glow { width: 36px; height: 36px; }
+  .dom-name { font-size: 0.82rem; }
+  .dom-message { font-size: 0.67rem; line-height: 1.45; padding: 4px 7px; }
+  .dom-conf-pill { font-size: 0.6rem; padding: 1px 6px; }
+  .message-col { padding: 5px 8px; gap: 3px; }
+
+  /* Probabilities */
+  .prob-row { padding: 3px 10px; gap: 5px; }
+  .prob-label { width: 68px; font-size: 0.7rem; }
+  .p-icon { font-size: 0.85rem; }
+  .prob-bar-bg { height: 5px; }
+  .prob-pct { width: 26px; font-size: 0.68rem; }
+  .prob-title { font-size: 9px; }
+
+  /* Notes */
+  .notes-pane { min-height: 120px; max-height: 180px; }
+  .notes-textarea { height: 48px; font-size: 11px; }
+  .notes-save-btn, .notes-cancel-btn { font-size: 10px; padding: 3px 9px; }
+  .notes-add-btn { font-size: 10px; padding: 2px 7px; }
+  .note-text { font-size: 11px; }
+  .note-ts { font-size: 9px; }
+
+  /* Tutor */
+  .tutor-log { padding: 5px 10px 6px; gap: 5px; }
+  .tutor-msg { font-size: 0.67rem; padding: 5px 8px; gap: 6px; }
+  .tutor-msg-icon { font-size: 0.88rem; }
+  .tutor-msg-conf, .tutor-msg-time { font-size: 9px; }
+
+  /* Section headers */
+  .breakdown-hdr, .timeline-hdr, .notes-hdr, .prob-header {
+    padding: 5px 10px 4px;
+  }
+
+  /* Mobile nav drawer items slightly smaller */
+  .mobile-nav-item { font-size: 0.85rem; padding: 10px 16px; }
+}
+
+/* ── Small mobile (≤360px) ── */
+@media (max-width: 360px) {
+
+  .topbar { padding: 0 8px; height: 40px; }
+  .logo { font-size: 0.82rem; gap: 5px; }
+  .logo-icon { width: 22px; height: 22px; font-size: 0.72rem; }
+  .hamburger-btn { width: 32px; height: 32px; }
+  .mobile-nav-drawer { top: 40px; }
+
+  .cam-pane {
+    min-height: 190px;
+    max-height: 240px;
+    padding: 6px 6px 44px 6px;
+  }
+
+  .btn { font-size: 10px; padding: 7px 0; }
+
+  .avatar-col { width: 48px; }
+  .avatar-face, .avatar-face svg { width: 32px !important; height: 32px !important; }
+  .dom-name { font-size: 0.76rem; }
+  .dom-message { font-size: 0.63rem; padding: 3px 6px; }
+
+  .prob-label { width: 60px; font-size: 0.65rem; }
+  .prob-pct { width: 24px; font-size: 0.64rem; }
+
+  .tl-stat-val { font-size: 11px; }
+  .tl-stat-lbl { font-size: 7.5px; letter-spacing: .03em; }
+
+  .tutor-msg { font-size: 0.63rem; }
+}
+
+/* ── Landscape phone: side-by-side layout, no overflow ── */
+@media (max-width: 768px) and (orientation: landscape) {
+  body { height: 100dvh; overflow: hidden; }
+
+  .app-body {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+    overflow: hidden;
+    height: calc(100dvh - 44px);
+  }
+
+  .left-col  { overflow-y: auto; border-right: 1px solid var(--border); border-bottom: none; }
+  .right-col { overflow-y: auto; }
+
+  .cam-pane {
+    max-height: 200px;
+    min-height: 160px;
+  }
+
+  /* In landscape, hamburger stays but drawer is lower priority */
+  .mobile-nav-drawer { top: 44px; }
+}
+
+@media (max-width: 480px) and (orientation: landscape) {
+  .mobile-nav-drawer { top: 42px; }
+  .app-body { height: calc(100dvh - 42px); }
+}
+
+@media (max-width: 360px) and (orientation: landscape) {
+  .mobile-nav-drawer { top: 40px; }
+  .app-body { height: calc(100dvh - 40px); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE PATCH — full device support additions
+   Covers: safe-area insets, touch improvements, cam aspect-ratio,
+   right-col scroll fix, better btn-row on mobile, font scaling,
+   fine-grained portrait/landscape corrections.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Safe-area insets for notched / rounded phones (iOS & Android) ── */
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+.topbar {
+  padding-left:  max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+}
+footer {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* ── Touch: prevent 300ms click delay on tap targets ── */
+.btn, .hamburger-btn, .mobile-nav-item,
+.back-btn, .notes-add-btn, .notes-save-btn,
+.notes-cancel-btn, .note-delete {
+  touch-action: manipulation;
+}
+
+/* ── Camera: keep a proper aspect ratio so it never collapses ── */
+.cam-pane {
+  aspect-ratio: unset; /* desktop keeps flex behaviour */
+}
+
+/* ── Prevent text overflow in tutor messages on narrow screens ── */
+.tutor-msg-body, .dom-message, .note-text {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* ── Prevent the breakdown section overflowing its container ── */
+.dominant-card {
+  min-width: 0;
+}
+.message-col {
+  min-width: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LARGE DESKTOP GUARD (≥1440px) — give the grid more breathing room
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1440px) {
+  .app-body {
+    grid-template-columns: 36fr 64fr;
+  }
+  .prob-label { width: 96px; }
+  .dom-name   { font-size: 1.15rem; }
+  .dom-message { font-size: 0.8rem; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MEDIUM LAPTOP (≤1180px) — tighten spacing without losing columns
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1180px) {
+  .prob-row    { padding: 4px 14px; gap: 7px; }
+  .prob-label  { width: 82px; font-size: 0.76rem; }
+  .prob-pct    { width: 32px; font-size: 0.73rem; }
+  .dom-name    { font-size: 1rem; }
+  .dom-message { font-size: 0.74rem; }
+  .tutor-msg   { font-size: 0.73rem; }
+  .tl-stat-val { font-size: 13px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TABLET PORTRAIT PATCH  (≤768px) — additions on top of existing rules
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Safe-area: topbar & drawer */
+  .topbar {
+    padding-left:  max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+  .mobile-nav-drawer {
+    padding-left:  env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Camera: fixed aspect ratio, no collapse */
+  .cam-pane {
+    aspect-ratio: 4 / 3;
+    min-height: unset;
+    max-height: unset;
+  }
+
+  /* Btn-row: 2-column grid on tablet portrait */
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Right col: force scroll when stacked */
+  .right-col {
+    overflow-y: auto;
+    max-height: unset;
+  }
+
+  /* Timeline pane: give it a defined height so it doesn't collapse */
+  .timeline-pane {
+    min-height: 140px;
+    max-height: 220px;
+  }
+
+  /* Notes pane: sensible height */
+  .notes-pane {
+    height: auto;
+    min-height: 140px;
+    max-height: 220px;
+  }
+
+  /* Probabilities: full width, no horizontal overflow */
+  .prob-list {
+    overflow: visible;
+  }
+  .prob-bar-bg {
+    min-width: 0;
+  }
+
+  /* Dominant card: keep content inside */
+  .dominant-card {
+    flex-wrap: nowrap;
+    min-height: 64px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LARGE MOBILE  (≤480px) — additions
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+
+  /* Safe-area */
+  .topbar {
+    padding-left:  max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+  }
+
+  /* Camera: taller on phones */
+  .cam-pane {
+    aspect-ratio: 3 / 4;
+  }
+
+  /* Btn-row: still 2-col but items fill naturally */
+  .btn-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+  }
+
+  /* Dominant card: allow full-width avatar strip */
+  .avatar-col {
+    padding: 5px;
+  }
+
+  /* Probabilities */
+  .prob-label {
+    width: 64px;
+    font-size: 0.68rem;
+  }
+  .prob-pct {
+    width: 26px;
+    font-size: 0.66rem;
+  }
+  .prob-bar-bg {
+    height: 5px;
+  }
+
+  /* Timeline */
+  .tl-stat-val { font-size: 12px; }
+  .tl-stat-lbl { font-size: 8px;  }
+  .tl-chip-label { font-size: 10px; }
+
+  /* Notes textarea: comfortable thumb height */
+  .notes-textarea {
+    height: 52px;
+    font-size: 16px; /* prevents iOS auto-zoom on focus */
+  }
+
+  /* Select / input: prevent iOS zoom */
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SMALL MOBILE  (≤360px) — additions
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 360px) {
+
+  /* Cam: square feels best on tiny screens */
+  .cam-pane {
+    aspect-ratio: 1 / 1;
+  }
+
+  /* Btn-row: 2-col still, tighter labels */
+  .btn { font-size: 10px; }
+
+  /* Probabilities */
+  .prob-label { width: 56px; font-size: 0.63rem; }
+  .prob-pct   { width: 22px; font-size: 0.62rem; }
+
+  /* Reduce tutor-log padding */
+  .tutor-log { padding: 4px 8px 6px; }
+  .tutor-msg { padding: 5px 8px; font-size: 0.62rem; gap: 5px; }
+  .tutor-msg-tag { font-size: 8.5px; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LANDSCAPE PHONE — refined (≤768px, landscape)
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) and (orientation: landscape) {
+
+  /* Camera: wider than tall in landscape */
+  .cam-pane {
+    aspect-ratio: 16 / 9;
+    min-height: unset;
+    max-height: unset;
+  }
+
+  /* Btn-row back to full row in landscape */
+  .btn-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  /* Drawer: full screen height minus topbar */
+  .mobile-nav-drawer {
+    max-height: calc(100dvh - 44px);
+    overflow-y: auto;
+  }
+
+  /* Safe-area landscape (notch on side) */
+  .topbar {
+    padding-left:  max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+  }
+  .left-col, .right-col {
+    padding-left:  env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PRINT — simple readable layout
+   ══════════════════════════════════════════════════════════════════════════ */
+@media print {
+  body   { overflow: visible; height: auto; }
+  .topbar, .btn-row, .hamburger-btn,
+  .mobile-nav-drawer, .mobile-nav-overlay { display: none !important; }
+  .app-body { grid-template-columns: 1fr; height: auto; overflow: visible; }
+  .left-col, .right-col { overflow: visible; height: auto; border: none; }
+  .cam-pane { display: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   REDUCED MOTION — respect user preference
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:  0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

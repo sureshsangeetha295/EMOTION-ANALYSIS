@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Emotion Analysis — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,300;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style/pages/login.css"/>
+</head>
+<body>
+
+<!-- Blobs -->
+<div class="blob blob-tr"></div>
+<div class="blob blob-bl"></div>
+<div class="blob blob-tl"></div>
+<div class="blob blob-br"></div>
+
+<!-- Logo -->
+<a class="page-logo" href="/home">
+  <div class="page-logo-box">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M7 18a5 5 0 0 1 10 0"/></svg>
+  </div>
+  <span class="page-logo-name">Emotion Analysis</span>
+</a>
+
+<!-- Card -->
+<div class="card">
+  <div class="card-heading">
+    <h1 class="card-title" id="card-title">Hi there!</h1>
+    <p class="card-sub" id="card-sub">Sign in to continue to your dashboard</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active"  onclick="switchTab('signin')"  id="tab-signin">Sign In</button>
+    <button class="tab-btn"         onclick="switchTab('signup')"  id="tab-signup">Sign Up</button>
+    <button class="tab-btn reset-tab" onclick="switchTab('reset')" id="tab-reset" style="display:none">Reset</button>
+    <button class="tab-btn admin-tab" onclick="switchTab('admin')" id="tab-admin" style="display:none">Admin</button>
+  </div>
+
+  <!-- ══ SIGN IN ══ -->
+  <div class="panel active" id="panel-signin">
+    <div class="msg" id="msg-signin">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="msg-signin-txt"></span>
+    </div>
+    <div class="field">
+      <label>Email Address</label>
+      <input type="email" id="si-email" placeholder="you@example.com" autocomplete="email"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <div class="pw-wrap">
+        <input type="password" id="si-password" placeholder="••••••••••" autocomplete="current-password"/>
+        <button class="eye-btn" type="button" onclick="togglePw('si-password',this)">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <!-- CAPTCHA -->
+    <div class="captcha-wrap">
+      <span class="captcha-label">
+        <svg style="display:inline;width:12px;height:12px;vertical-align:-1px;fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;margin-right:5px" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Verify 
+      </span>
+      <div class="captcha-box">
+        <canvas class="captcha-canvas" id="captcha-canvas" width="220" height="60"></canvas>
+        <button type="button" class="captcha-refresh" onclick="generateCaptcha()" title="New code">
+          <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+      </div>
+      <input type="text" class="captcha-input" id="si-captcha" placeholder="Type the characters above…" autocomplete="off" maxlength="6"/>
+      <div class="captcha-error" id="captcha-error">Incorrect code. Please try again.</div>
+    </div>
+
+    <button class="btn-submit" id="btn-signin" onclick="handleSignIn()">
+      <div class="spinner"></div><span class="btn-txt">Sign In</span>
+    </button>
+  </div>
+
+  <!-- ══ SIGN UP ══ -->
+  <div class="panel" id="panel-signup">
+    <div class="msg" id="msg-signup">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="msg-signup-txt"></span>
+    </div>
+    <div class="field">
+      <label>Email Address</label>
+      <input type="email" id="su-email" placeholder="you@example.com" autocomplete="email"/>
+    </div>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="su-username" placeholder="e.g. alexsmith" autocomplete="username" oninput="checkUsername(this.value)"/>
+      <div class="field-error" id="un-error"></div>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <div class="pw-wrap">
+        <input type="password" id="su-password" placeholder="Create a strong password" autocomplete="new-password" oninput="checkStrength(this.value)"/>
+        <button class="eye-btn" type="button" onclick="togglePw('su-password',this)">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="strength-wrap">
+        <div class="strength-bars">
+          <div class="strength-bar" id="sb1"></div><div class="strength-bar" id="sb2"></div>
+          <div class="strength-bar" id="sb3"></div><div class="strength-bar" id="sb4"></div>
+        </div>
+        <span class="strength-label" id="strength-label">Enter a password</span>
+      </div>
+      <div class="field-error" id="pw-error"></div>
+    </div>
+    <div class="field">
+      <label>Confirm Password</label>
+      <div class="pw-wrap">
+        <input type="password" id="su-confirm" placeholder="Repeat your password" autocomplete="new-password" oninput="checkConfirm(this.value)"/>
+        <button class="eye-btn" type="button" onclick="togglePw('su-confirm',this)">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="field-error" id="confirm-error"></div>
+    </div>
+
+    <!-- Security Questions -->
+    <div class="sq-block">
+      <div class="sq-block-header">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <div>
+          <div class="sq-block-title">Security Questions</div>
+          <div class="sq-block-sub">Used to recover your account if you forget your password</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Question 1</label>
+        <select id="sq1-q">
+          <option value="">— Choose a question —</option>
+          <option value="school">What was the name of your first school?</option>
+          <option value="pet">What was the name of your first pet?</option>
+          <option value="city">In what city were you born?</option>
+          <option value="mother">What is your mother's maiden name?</option>
+          <option value="street">What street did you grow up on?</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Your Answer</label>
+        <input type="text" id="sq1-a" placeholder="Your answer…" autocomplete="off"/>
+      </div>
+
+      <div class="field" style="margin-top:12px">
+        <label>Question 2</label>
+        <select id="sq2-q">
+          <option value="">— Choose a question —</option>
+          <option value="food">What is your all-time favourite food?</option>
+          <option value="movie">What is your favourite childhood movie?</option>
+          <option value="teacher">What was your favourite teacher's name?</option>
+          <option value="sport">What sport did you play first?</option>
+          <option value="colour">What is your favourite colour?</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Your Answer</label>
+        <input type="text" id="sq2-a" placeholder="Your answer…" autocomplete="off"/>
+      </div>
+    </div>
+
+    <button class="btn-submit" id="btn-signup" onclick="handleSignUp()">
+      <div class="spinner"></div><span class="btn-txt">Create Account</span>
+    </button>
+    <p class="terms-note">By signing up you agree to our <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.</p>
+  </div>
+
+  <!-- ══ RESET PASSWORD ══ -->
+  <div class="panel" id="panel-reset">
+    <div class="msg" id="msg-reset">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="msg-reset-txt"></span>
+    </div>
+
+    <!-- Step indicator -->
+    <div class="step-indicator">
+      <div class="step-dot active" id="sd1">1</div>
+      <div class="step-line" id="sl1"></div>
+      <div class="step-dot" id="sd2">2</div>
+      <div class="step-line" id="sl2"></div>
+      <div class="step-dot" id="sd3">3</div>
+    </div>
+    <div class="step-labels">
+      <span class="step-lbl active" id="slbl1">Verify Email</span>
+      <span class="step-lbl" id="slbl2">Answer Questions</span>
+      <span class="step-lbl" id="slbl3">New Password</span>
+    </div>
+
+    <!-- Step 1: Email -->
+    <div class="reset-step active" id="rs1">
+      <div class="field">
+        <label>Your Email Address</label>
+        <input type="email" id="rs-email" placeholder="Enter your registered email"/>
+      </div>
+      <button class="btn-submit blue" id="btn-rs1" onclick="resetStep1()">
+        <div class="spinner"></div><span class="btn-txt">Continue →</span>
+      </button>
+    </div>
+
+    <!-- Step 2: Security Questions -->
+    <div class="reset-step" id="rs2">
+      <div class="msg info" id="msg-rs2-info" style="display:flex">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Answer both security questions exactly as you set them during sign-up.</span>
+      </div>
+      <div class="field">
+        <label id="rs-q1-label">Security Question 1</label>
+        <input type="text" id="rs-a1" placeholder="Your answer…" autocomplete="off"/>
+      </div>
+      <div class="field" style="margin-bottom:18px">
+        <label id="rs-q2-label">Security Question 2</label>
+        <input type="text" id="rs-a2" placeholder="Your answer…" autocomplete="off"/>
+      </div>
+      <button class="btn-submit blue" id="btn-rs2" onclick="resetStep2()">
+        <div class="spinner"></div><span class="btn-txt">Verify Answers →</span>
+      </button>
+    </div>
+
+    <!-- Step 3: New Password -->
+    <div class="reset-step" id="rs3">
+      <div class="field">
+        <label>New Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="rs-newpw" placeholder="Create a new strong password" oninput="checkStrengthReset(this.value)"/>
+          <button class="eye-btn" type="button" onclick="togglePw('rs-newpw',this)">
+            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="strength-wrap">
+          <div class="strength-bars">
+            <div class="strength-bar" id="rsb1"></div><div class="strength-bar" id="rsb2"></div>
+            <div class="strength-bar" id="rsb3"></div><div class="strength-bar" id="rsb4"></div>
+          </div>
+          <span class="strength-label" id="rs-strength-label">Enter a password</span>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:18px">
+        <label>Confirm New Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="rs-confirmpw" placeholder="Repeat new password"/>
+          <button class="eye-btn" type="button" onclick="togglePw('rs-confirmpw',this)">
+            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn-submit blue" id="btn-rs3" onclick="resetStep3()">
+        <div class="spinner"></div><span class="btn-txt">Reset Password</span>
+      </button>
+    </div>
+    
+  </div>
+
+  <!-- ══ ADMIN ══ -->
+  <div class="panel" id="panel-admin">
+    <div class="msg" id="msg-admin">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="msg-admin-txt"></span>
+    </div>
+    <div style="text-align:center;margin-bottom:14px">
+      <span class="admin-badge">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Admin Access
+      </span>
+    </div>
+    <div class="field">
+      <label>Admin Email</label>
+      <input type="email" id="ad-username" placeholder="admin@example.com" autocomplete="email"/>
+    </div>
+    <div class="field" style="margin-bottom:18px">
+      <label>Admin Password</label>
+      <div class="pw-wrap">
+        <input type="password" id="ad-password" placeholder="Enter admin password" autocomplete="current-password"/>
+        <button class="eye-btn" type="button" onclick="togglePw('ad-password',this)">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <button class="btn-submit" id="btn-admin" onclick="handleAdmin()">
+      <div class="spinner"></div><span class="btn-txt">Admin Sign In</span>
+    </button>
+    
+  </div>
+</div>
+
+<!-- Footer links -->
+<div class="footer-links">
+  <span onclick="resetActiveForm()" title="Clear all fields">↺ Reset</span>
+  <div class="footer-dot"></div>
+  <span onclick="switchTab('reset')">Forgot password?</span>
+  <div class="footer-dot"></div>
+  <span onclick="switchTab('admin')" style="cursor:pointer">Admin</span>
+</div>
+
+<script src="script/pages/login.js"></script>
+</body>
+</html>

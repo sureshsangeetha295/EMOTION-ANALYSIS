@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EmotionAI — Detection Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,300;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style/pages/app.css"/>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav>
+  <a class="nav-logo" href="/home">
+    <div class="logo-box">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+        <path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+        <circle cx="12" cy="10" r="3"/><path d="M7 18a5 5 0 0 1 10 0"/>
+      </svg>
+    </div>
+    Emotion Analysis
+  </a>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="nav-live-badge" id="liveBadge"><div class="nav-live-dot"></div>LIVE</div>
+    <span id="topbarUser" style="font-size:12px;color:var(--text3)"></span>
+  </div>
+  <div class="nav-right">
+    <a class="back-btn" href="/home">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>Back
+    </a>
+    <a class="back-btn" href="#" onclick="if(typeof Auth!=='undefined')Auth.logout()">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign out
+    </a>
+    <div class="nav-launch-wrap" id="navLaunchWrap">
+      <button class="nav-launch-btn" onclick="toggleLaunchMenu(event)">
+        <svg viewBox="0 0 24 24" width="11" height="11"><polygon points="6 3 20 12 6 21 6 3" fill="white"/></svg>
+        Switch Mode
+        <svg viewBox="0 0 10 6" width="10" height="6" id="launchChevron"><path d="M0 0l5 6 5-6z" fill="white"/></svg>
+      </button>
+      <div class="nav-dropdown" id="navDropdown">
+        <a class="nav-dd-item" href="/detect">
+          <div class="nav-dd-icon"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <div><div class="nav-dd-label">Detect</div><div class="nav-dd-sub">Single snapshot mode</div></div>
+        </a>
+        <div class="nav-dd-divider"></div>
+        <a class="nav-dd-item current" href="/livecam">
+          <div class="nav-dd-icon"><svg viewBox="0 0 24 24"><path d="M15 10l4.553-2.07A1 1 0 0 1 21 8.845v6.31a1 1 0 0 1-1.447.914L15 14"/><rect x="2" y="7" width="13" height="10" rx="2"/></svg></div>
+          <div><div class="nav-dd-label">Live Cam</div><div class="nav-dd-sub">Current page</div></div>
+        </a>
+        <div class="nav-dd-divider"></div>
+        <a class="nav-dd-item" href="/upload">
+          <div class="nav-dd-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+          <div><div class="nav-dd-label">Upload</div><div class="nav-dd-sub">Analyze video or image</div></div>
+        </a>
+      </div>
+    </div>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-overlay" id="mobileOverlay"></div>
+<div class="mobile-drawer" id="mobileDrawer">
+  <div class="drawer-header">
+    <div class="drawer-brand">
+      <div class="logo-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M7 18a5 5 0 0 1 10 0"/></svg></div>
+      <span class="drawer-brand-name">Emotion Analysis</span>
+    </div>
+    <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close menu">✕</button>
+  </div>
+  <div class="mobile-drawer-divider"></div>
+  <a href="/home"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</a>
+  <a href="/detect"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>Detect Mode</a>
+  <a href="/livecam"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>Live Cam</a>
+  <div class="mobile-drawer-divider"></div>
+  <a href="/faq"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>FAQ</a>
+  <div class="mobile-drawer-divider"></div>
+  <button onclick="if(typeof Auth!=='undefined')Auth.logout()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign out</button>
+</div>
+
+<!-- ═══ MAIN 3-COL ═══ -->
+<div class="app-body">
+
+  <!-- ═══ LEFT: Info + Guide + Notes ═══ -->
+  <div class="left-panel">
+    <div>
+      <div class="panel-label">Detection Dashboard</div>
+      <div class="panel-title">Analyse emotions <em>in real time.</em></div>
+    </div>
+    <div class="info-box">
+      <div class="bullets">
+        <div class="bullet"><div class="bdot"></div><span>Captures frames from your live camera and runs them through the AI model for a precise emotional reading.</span></div>
+        <div class="bullet"><div class="bdot"></div><span>Returns a full probability distribution across all 7 emotion classes with millisecond-level inference speed.</span></div>
+        <div class="bullet"><div class="bdot"></div><span>Go Live for continuous monitoring, or use single Detect for spot checks and structured sessions.</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="guide-label">Guide</div>
+      <div class="guide-section">
+        <div class="guide-step active" id="step1">
+          <div class="step-num" id="stepNum1">1</div>
+          <div class="step-text">Camera starts automatically on load</div>
+          <div class="step-icon"><svg viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div>
+        </div>
+        <div class="guide-step" id="step2">
+          <div class="step-num" id="stepNum2">2</div>
+          <div class="step-text">Click <strong>Detect</strong> for a single snapshot</div>
+          <div class="step-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        </div>
+        <div class="guide-step" id="step3">
+          <div class="step-num" id="stepNum3">3</div>
+          <div class="step-text">Or click <strong>Go Live</strong> for continuous tracking</div>
+          <div class="step-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        </div>
+        <div class="guide-step" id="step4">
+          <div class="step-num" id="stepNum4">4</div>
+          <div class="step-text">View results, timeline &amp; engagement below</div>
+          <div class="step-icon"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session Notes -->
+    <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="notes-section-hdr">
+        <span>Session Notes</span>
+        <button class="notes-add-btn" onclick="toggleNoteInput()">+ Add Note</button>
+      </div>
+      <div class="notes-input-wrap" id="noteInputWrap">
+        <textarea class="notes-textarea" id="noteTextarea"
+          placeholder="Write observations, numbers, reminders… (Ctrl+Enter to save)"
+          autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+        <div class="notes-actions">
+          <button class="notes-cancel-btn" onclick="toggleNoteInput()">Cancel</button>
+          <button class="notes-save-btn" onclick="saveNote()">Save Note</button>
+        </div>
+      </div>
+      <div class="notes-list" id="notesList">
+        <div class="notes-empty" id="notesEmpty">No notes yet — add observations during the session.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CENTER: Camera ═══ -->
+  <div class="center-col">
+    <div class="cam-box" id="camBox">
+      <!-- Idle avatar with typewriter -->
+      <div class="cam-idle" id="camIdle">
+        <div class="idle-inner">
+          <div style="flex-shrink:0">
+            <svg class="avatar-group" viewBox="0 0 150 200" width="130" height="155">
+              <!-- laptop prop -->
+              <rect fill="#374151" x="22" y="158" width="106" height="6" rx="3"/>
+              <rect fill="#374151" x="30" y="140" width="90" height="22" rx="4"/>
+              <rect fill="#1e40af" x="34" y="143" width="82" height="16" rx="2"/>
+              <rect fill="rgba(255,255,255,0.22)" x="37" y="147" width="28" height="1.5" rx="1"/>
+              <rect fill="rgba(255,255,255,0.13)" x="37" y="151" width="18" height="1.5" rx="1"/>
+              <circle fill="#e8440a" cx="108" cy="147" r="3"/>
+              <!-- body -->
+              <rect fill="#f5d0a9" x="63" y="118" width="24" height="22" rx="4"/>
+              <g class="avatar-body-anim">
+                <ellipse fill="#3b82f6" cx="75" cy="148" rx="36" ry="20"/>
+                <path fill="#1d4ed8" d="M66 132 L75 142 L84 132 Q78 137 75 138 Q72 137 66 132Z"/>
+              </g>
+              <ellipse fill="#f5d0a9" cx="31" cy="88" rx="7" ry="9"/>
+              <ellipse fill="#f5d0a9" cx="119" cy="88" rx="7" ry="9"/>
+              <ellipse fill="#f5d0a9" cx="75" cy="85" rx="44" ry="50"/>
+              <ellipse fill="#2a1a0a" cx="75" cy="46" rx="44" ry="22"/>
+              <rect fill="#2a1a0a" x="31" y="44" width="88" height="14"/>
+              <ellipse fill="#2a1a0a" cx="31" cy="63" rx="8" ry="18"/>
+              <ellipse fill="#2a1a0a" cx="119" cy="63" rx="8" ry="18"/>
+              <!-- glasses -->
+              <rect fill="none" stroke="#374151" stroke-width="2" x="43" y="76" width="26" height="18" rx="5"/>
+              <rect fill="none" stroke="#374151" stroke-width="2" x="81" y="76" width="26" height="18" rx="5"/>
+              <line stroke="#374151" stroke-width="2" x1="69" y1="85" x2="81" y2="85"/>
+              <line stroke="#374151" stroke-width="2" x1="31" y1="85" x2="43" y2="85"/>
+              <line stroke="#374151" stroke-width="2" x1="107" y1="85" x2="119" y2="85"/>
+              <!-- cheeks -->
+              <ellipse fill="rgba(255,100,80,0.15)" cx="44" cy="97" rx="12" ry="8"/>
+              <ellipse fill="rgba(255,100,80,0.15)" cx="106" cy="97" rx="12" ry="8"/>
+              <!-- eyes -->
+              <g class="avatar-eye" style="transform-origin:56px 85px">
+                <ellipse cx="56" cy="85" rx="7" ry="7.5" fill="#fff"/>
+                <ellipse class="avatar-pupil" cx="57" cy="86" rx="4" ry="4.5" style="transform-origin:57px 86px"/>
+                <ellipse cx="58.5" cy="83" rx="1.5" ry="1.5" fill="#fff" opacity="0.8"/>
+              </g>
+              <g class="avatar-eye" style="transform-origin:94px 85px">
+                <ellipse cx="94" cy="85" rx="7" ry="7.5" fill="#fff"/>
+                <ellipse class="avatar-pupil" cx="95" cy="86" rx="4" ry="4.5" style="transform-origin:95px 86px"/>
+                <ellipse cx="96.5" cy="83" rx="1.5" ry="1.5" fill="#fff" opacity="0.8"/>
+              </g>
+              <path stroke="#2a1a0a" stroke-width="2" fill="none" stroke-linecap="round" d="M49 72 Q56 69 63 72"/>
+              <path stroke="#2a1a0a" stroke-width="2" fill="none" stroke-linecap="round" d="M87 72 Q94 69 101 72"/>
+              <path stroke="#c9956a" stroke-width="1.5" fill="none" d="M75 90 Q72 97 69 99 Q75 102 81 99 Q78 97 75 90"/>
+              <path stroke="#c06040" stroke-width="2" fill="none" stroke-linecap="round" id="avatarMouth" d="M 65 110 Q 75 117 85 110"/>
+            </svg>
+          </div>
+          <div class="idle-text-side">
+            <div class="greeting-line" id="greetingLine"></div>
+            <div class="greeting-sub">EmotionAI · Dashboard</div>
+            <div class="typewriter-label"><span id="typewriterText"></span><span class="typewriter-cursor"></span></div>
+            <div class="idle-hint"><div class="idle-hint-dot"></div>Click Detect or Go Live to begin</div>
+          </div>
+        </div>
+      </div>
+
+      <video id="videoFeed" autoplay muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none"></video>
+      <canvas id="captureCanvas" style="display:none"></canvas>
+
+      <div class="bk tl"></div><div class="bk tr"></div><div class="bk bl"></div><div class="bk br"></div>
+
+      <div class="cam-status" id="camStatus">
+        <div class="cam-status-dot ready" id="camStatusDot"></div>
+        <span class="cam-status-txt" id="camStatusTxt">READY</span>
+      </div>
+
+      <div class="live-tag" id="liveTag"><div class="live-tag-dot"></div>LIVE</div>
+      <div class="cam-scan" id="camScan"></div>
+      <div class="detection-bar" id="detectionBar"></div>
+
+      <!-- Reaction box (shown during live) -->
+      <div class="reaction-box" id="reactionBox">
+        <div class="rx-label">React</div>
+        <button class="reaction-btn" onclick="sendReaction('thumbsup',this)">👍<span class="tooltip">Content is great!</span></button>
+        <button class="reaction-btn" onclick="sendReaction('thumbsdown',this)">👎<span class="tooltip">Not clear / boring</span></button>
+        <div class="rx-divider"></div>
+        <button class="reaction-btn" onclick="sendReaction('handraise',this)">✋<span class="tooltip">Repeat / Doubt</span></button>
+        <div class="rx-divider"></div>
+        <button class="reaction-btn" onclick="sendReaction('confused',this)">😕<span class="tooltip">I'm confused</span></button>
+        <button class="reaction-btn" onclick="sendReaction('clap',this)">👏<span class="tooltip">Great explanation!</span></button>
+      </div>
+
+      <!-- JS ghost compat elements -->
+      <div id="msBadge" class="js-ghost"></div>
+      <div id="camResultOverlay" class="js-ghost">
+        <div id="resultDot"></div><span id="resultEmotion"></span>
+        <div id="engFloat"></div><div id="resultConf"></div>
+        <div id="engNum"></div><div id="engPctSuffix"></div>
+      </div>
+    </div>
+
+    <div class="btn-row" id="btnRow">
+      <button class="btn btn-icon" id="btnDetect" onclick="doDetect()">
+        <svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/></svg>
+        Detect
+      </button>
+      <button class="btn btn-icon" id="btnGoLive" onclick="startLive()">
+        <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        Go Live
+      </button>
+      <button class="btn btn-stop btn-icon" id="btnStop" onclick="stopLive()" style="display:none">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="white"/></svg>
+        Stop
+      </button>
+      <label class="upload-label">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Upload Video
+        <input type="file" id="videoFileInput" accept="video/*" style="display:none"/>
+      </label>
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT PANEL: Probs + Speedometer + Timeline ═══ -->
+  <div class="right-panel">
+
+    <!-- All Probabilities -->
+    <div class="prob-section">
+      <div class="section-hdr">
+        <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        ALL PROBABILITIES
+      </div>
+      <div class="prob-list" id="probList"></div>
+    </div>
+
+    <!-- Engagement Speedometer -->
+    <div class="speedo-section">
+      <div class="section-hdr">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg>
+        ENGAGEMENT METER
+      </div>
+      <div class="speedo-wrap">
+        <svg class="speedo-svg" viewBox="0 0 230 120" id="speedoSvg">
+          <defs>
+            <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#dc2626"/>
+              <stop offset="40%" stop-color="#ca8a04"/>
+              <stop offset="100%" stop-color="#16a34a"/>
+            </linearGradient>
+          </defs>
+          <path d="M 20 112 A 95 95 0 0 1 210 112" fill="none" stroke="#e5e7eb" stroke-width="15" stroke-linecap="round"/>
+          <path d="M 20 112 A 95 95 0 0 1 210 112" fill="none" stroke="url(#arcGrad)" stroke-width="15" stroke-linecap="round" opacity="0.2"/>
+          <path id="speedoArc" d="M 20 112 A 95 95 0 0 1 115 17" fill="none" stroke="#ca8a04" stroke-width="15" stroke-linecap="round" opacity="0.9"/>
+          <line id="speedoNeedle" x1="115" y1="112" x2="115" y2="26" stroke="#1a1612" stroke-width="3" stroke-linecap="round" style="transform-origin:115px 112px;transform:rotate(0deg);transition:transform 0.9s cubic-bezier(0.34,1.56,0.64,1)"/>
+          <circle cx="115" cy="112" r="7" fill="#1a1612"/>
+          <circle cx="115" cy="112" r="3.5" fill="#fff"/>
+          <text x="12" y="116" font-size="8" fill="#dc2626" font-family="Plus Jakarta Sans,sans-serif" font-weight="700">0</text>
+          <text x="107" y="12" font-size="8" fill="#6b7280" font-family="Plus Jakarta Sans,sans-serif" font-weight="700" text-anchor="middle">50</text>
+          <text x="218" y="116" font-size="8" fill="#16a34a" font-family="Plus Jakarta Sans,sans-serif" font-weight="700" text-anchor="end">100</text>
+        </svg>
+        <div class="speedo-value-label" id="speedoValue" style="color:var(--yellow)">—</div>
+        <div class="speedo-status-txt" id="speedoStatus">Awaiting detection</div>
+      </div>
+      <div class="speedo-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div>Green = Highly engaged</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ca8a04"></div>Yellow = Partial focus</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div>Red = Disengaged</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>Grey = Not tracking</div>
+      </div>
+    </div>
+
+    <!-- Session Summary stats -->
+    <div class="summary-section">
+      <div class="section-hdr">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        SESSION SUMMARY
+      </div>
+      <div class="session-stats-row">
+        <div class="sess-stat"><div class="sess-stat-val" id="tlDetCount">0</div><div class="sess-stat-lbl">Detections</div></div>
+        <div class="sess-stat"><div class="sess-stat-val green" id="statAttentive">—</div><div class="sess-stat-lbl">Attentive</div></div>
+        <div class="sess-stat"><div class="sess-stat-val yellow" id="statPartial">—</div><div class="sess-stat-lbl">Partial</div></div>
+        <div class="sess-stat"><div class="sess-stat-val red" id="statDisengaged">—</div><div class="sess-stat-lbl">Disengaged</div></div>
+        <div class="sess-stat"><div class="sess-stat-val" id="tlAvgEng">—</div><div class="sess-stat-lbl">Avg Eng</div></div>
+        <div class="sess-stat"><div class="sess-stat-val" id="tlDuration">00:00</div><div class="sess-stat-lbl">Duration</div></div>
+      </div>
+      <div class="end-note-row" id="endNoteRow">
+        <div class="end-time-badge" id="endBadgeTime">—</div>
+        <div class="end-note-txt">Session complete 🎓 &nbsp;·&nbsp; <span id="endBadgeNote">Great work!</span></div>
+      </div>
+    </div>
+
+    <!-- Session Timeline -->
+    <div class="timeline-section">
+      <div class="section-hdr" style="margin-bottom:6px">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        SESSION TIMELINE
+        <span style="margin-left:auto;font-size:9px;font-weight:700;color:var(--text3)" id="lastDetected"></span>
+      </div>
+      <div class="timeline-tags" id="timelineTag"></div>
+      <div class="timeline-scroll" id="timelineScroll">
+        <div class="tl-empty" id="tlEmpty">Session not started. Timeline will appear here.</div>
+      </div>
+      <!-- ghost compat -->
+      <div id="timelineDots" style="display:none"></div>
+      <div id="tlEngBar" style="display:none"></div>
+      <div id="tlConfBar" style="display:none"></div>
+      <div id="tlEngVal" style="display:none"></div>
+      <div id="tlConfVal" style="display:none"></div>
+      <div id="tlTopEmo" style="display:none"></div>
+      <div id="avgEngDisplay" style="display:none"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ BOTTOM 2-COL ═══ -->
+<div class="bottom-row">
+
+  <!-- Detected Emotion -->
+  <div class="bottom-col">
+    <div class="col-hdr">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      Detected Emotion
+    </div>
+    <div class="detected-panel" id="detectedBox">
+      <div class="det-avatar-wrap">
+        <svg viewBox="0 0 150 180" width="88" height="105" xmlns="http://www.w3.org/2000/svg">
+          <g class="det-av-group">
+            <rect fill="#f5d0a9" x="63" y="118" width="24" height="22" rx="4"/>
+            <g class="det-av-body">
+              <ellipse fill="#e8440a" cx="75" cy="158" rx="38" ry="28"/>
+              <path fill="#c73208" d="M66 136 L75 148 L84 136 Q78 140 75 141 Q72 140 66 136Z"/>
+            </g>
+            <ellipse fill="#f5d0a9" cx="30" cy="88" rx="7" ry="9"/>
+            <ellipse fill="#f5d0a9" cx="120" cy="88" rx="7" ry="9"/>
+            <ellipse fill="#f5d0a9" cx="75" cy="85" rx="44" ry="50"/>
+            <ellipse fill="#2a1a0a" cx="75" cy="46" rx="44" ry="22"/>
+            <rect fill="#2a1a0a" x="31" y="44" width="88" height="16" rx="0"/>
+            <ellipse fill="#2a1a0a" cx="31" cy="65" rx="8" ry="18"/>
+            <ellipse fill="#2a1a0a" cx="119" cy="65" rx="8" ry="18"/>
+            <ellipse fill="rgba(255,100,80,0.15)" cx="44" cy="96" rx="12" ry="8"/>
+            <ellipse fill="rgba(255,100,80,0.15)" cx="106" cy="96" rx="12" ry="8"/>
+            <g class="det-av-eye" style="transform-origin:56px 82px">
+              <ellipse cx="56" cy="82" rx="8" ry="9" fill="#fff"/>
+              <ellipse cx="57" cy="83" rx="4.5" ry="5" fill="#5b3a1a"/>
+              <ellipse cx="58.5" cy="80.5" rx="1.5" ry="1.5" fill="#fff" opacity="0.8"/>
+            </g>
+            <g class="det-av-eye" style="transform-origin:94px 82px">
+              <ellipse cx="94" cy="82" rx="8" ry="9" fill="#fff"/>
+              <ellipse cx="95" cy="83" rx="4.5" ry="5" fill="#5b3a1a"/>
+              <ellipse cx="96.5" cy="80.5" rx="1.5" ry="1.5" fill="#fff" opacity="0.8"/>
+            </g>
+            <path stroke="#2a1a0a" stroke-width="2.5" fill="none" stroke-linecap="round" d="M48 72 Q56 69 64 72" id="detBrowL"/>
+            <path stroke="#2a1a0a" stroke-width="2.5" fill="none" stroke-linecap="round" d="M86 72 Q94 69 102 72" id="detBrowR"/>
+            <path stroke="#c9956a" stroke-width="1.5" fill="none" d="M75 88 Q72 96 69 98 Q75 101 81 98 Q78 96 75 88"/>
+            <path stroke="#c06040" stroke-width="2" fill="none" stroke-linecap="round" id="detMouth" d="M 63 108 Q 75 115 87 108"/>
+          </g>
+        </svg>
+      </div>
+      <div class="det-info">
+        <div class="det-name" id="detName">Awaiting</div>
+        <div class="det-awaiting-txt" id="detAwaitTxt">Run detection to see results</div>
+        <div class="det-conf-badge hidden" id="detConf">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="13 2 13 9 20 9"/><path d="M21 3L13 11 9 7 3 13"/></svg>
+          <span id="detConfVal"></span>
+        </div>
+        <div class="det-desc" id="detDesc"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student Engagement Insight -->
+  <div class="bottom-col">
+    <div class="col-hdr">
+      <svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17H8v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/></svg>
+      Student Engagement Insight
+    </div>
+    <div class="insight-box" id="insightBox">
+      <span class="insight-chip" id="insightChip"></span>
+      <div class="insight-avatar-row">
+        <!-- Coping avatar — person writing notes -->
+        <div style="flex-shrink:0">
+          <svg viewBox="0 0 90 110" width="76" height="93" xmlns="http://www.w3.org/2000/svg">
+            <g style="animation:detFloat 3.2s ease-in-out infinite">
+              <rect fill="#f5d0a9" x="38" y="52" width="14" height="11" rx="3"/>
+              <ellipse fill="#e8440a" cx="45" cy="78" rx="22" ry="17"/>
+              <path fill="#c73208" d="M40 63 L45 72 L50 63 Q47 66 45 67 Q43 66 40 63Z"/>
+              <ellipse fill="#f5d0a9" cx="18" cy="38" rx="4" ry="5.5"/>
+              <ellipse fill="#f5d0a9" cx="72" cy="38" rx="4" ry="5.5"/>
+              <ellipse fill="#f5d0a9" cx="45" cy="36" rx="27" ry="30"/>
+              <ellipse fill="#2a1a0a" cx="45" cy="15" rx="27" ry="13"/>
+              <rect fill="#2a1a0a" x="18" y="13" width="54" height="10" rx="0"/>
+              <ellipse fill="#2a1a0a" cx="18" cy="26" rx="5" ry="11"/>
+              <ellipse fill="#2a1a0a" cx="72" cy="26" rx="5" ry="11"/>
+              <ellipse fill="rgba(255,100,80,0.18)" cx="28" cy="43" rx="7" ry="5"/>
+              <ellipse fill="rgba(255,100,80,0.18)" cx="62" cy="43" rx="7" ry="5"/>
+              <g style="animation:detBlink 4.5s ease-in-out infinite;transform-origin:34px 33px">
+                <ellipse cx="34" cy="33" rx="5" ry="5.5" fill="#fff"/>
+                <ellipse cx="35" cy="34" rx="2.8" ry="3" fill="#5b3a1a"/>
+                <ellipse cx="36" cy="32" rx="1" ry="1" fill="#fff" opacity="0.8"/>
+              </g>
+              <g style="animation:detBlink 4.5s ease-in-out infinite;transform-origin:56px 33px">
+                <ellipse cx="56" cy="33" rx="5" ry="5.5" fill="#fff"/>
+                <ellipse cx="57" cy="34" rx="2.8" ry="3" fill="#5b3a1a"/>
+                <ellipse cx="58" cy="32" rx="1" ry="1" fill="#fff" opacity="0.8"/>
+              </g>
+              <path stroke="#2a1a0a" stroke-width="2" fill="none" stroke-linecap="round" d="M29 25 Q34 22.5 39 24.5"/>
+              <path stroke="#2a1a0a" stroke-width="2" fill="none" stroke-linecap="round" d="M51 24.5 Q56 22.5 61 25"/>
+              <path stroke="#c9956a" stroke-width="1" fill="none" d="M45 38 Q43 43 41 44 Q45 46 49 44 Q47 43 45 38"/>
+              <path stroke="#c06040" stroke-width="1.5" fill="none" stroke-linecap="round" id="copMouth" d="M 38 51 Q 45 53 52 51"/>
+              <!-- Notepad -->
+              <rect fill="#fffbf5" stroke="#d4c4a8" stroke-width="1.2" x="4" y="58" width="30" height="36" rx="3"/>
+              <rect fill="#f59e4a" x="4" y="58" width="5" height="36" rx="2"/>
+              <line x1="13" y1="66" x2="30" y2="66" stroke="#d4bfa0" stroke-width="1.3" stroke-linecap="round"/>
+              <line x1="13" y1="72" x2="30" y2="72" stroke="#d4bfa0" stroke-width="1.3" stroke-linecap="round"/>
+              <line x1="13" y1="78" x2="26" y2="78" stroke="#d4bfa0" stroke-width="1.3" stroke-linecap="round"/>
+              <!-- Pen -->
+              <g style="animation:penWrite 1.2s ease-in-out infinite;transform-origin:54px 62px">
+                <rect fill="#e8440a" x="50" y="54" width="4" height="18" rx="1.5" transform="rotate(30 52 63)"/>
+                <polygon fill="#f5d0a9" points="50,71 54,71 52,76" transform="rotate(30 52 63)"/>
+                <rect fill="#d4d4d4" x="50" y="54" width="4" height="3.5" rx="1" transform="rotate(30 52 63)"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div class="insight-text" id="insightText">
+          <span class="insight-awaiting">Run detection to see engagement insight</span>
+        </div>
+      </div>
+      <div class="motivate-box" id="motivateBox"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="script/auth.js"></script>
+<script src="script/app/constants.js"></script>
+<script src="script/app/camera.js"></script>
+<script src="script/app/ui-core.js"></script>
+<script src="script/app/ui-avatar.js"></script>
+<script src="script/app/detection.js"></script>
+<script src="script/app/session.js"></script>
+<script src="script/app/init.js"></script>
+<script src="script/pages/app.js"></script>
+</body>
+</html>

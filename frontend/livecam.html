@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>EmotionAI — Live Cam</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,300;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style/pages/livecam.css"/>
+</head>
+<body>
+
+<nav>
+  <!-- Logo on far left -->
+  <div class="nav-logo-wrap">
+    <a href="/home" class="nav-logo">
+      <div class="logo-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M7 18a5 5 0 0 1 10 0"/></svg></div>
+      Emotion Analysis
+    </a>
+  </div>
+  <!-- Spacer pushes everything to the right -->
+  <div class="nav-spacer"></div>
+  <!-- Nav links (hidden on mobile) -->
+  <ul class="nav-links">
+    <li><a href="/home">Home</a></li>
+    <li><a href="/detect" class="active">Detect</a></li>
+    <li><a href="/faq">FAQ</a></li>
+    <li><a href="/feedback">Feedback</a></li>
+  </ul>
+  <!-- Actions (hidden on mobile) -->
+  <div class="nav-actions">
+    <div id="navLiveBadge" style="display:none;align-items:center;gap:5px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;letter-spacing:0.08em;padding:3px 9px;border-radius:20px;margin-right:6px"><span style="width:6px;height:6px;background:#fff;border-radius:50%;display:inline-block"></span>LIVE</div>
+    <a href="#" onclick="if(typeof Auth!=='undefined'&&Auth.logout)Auth.logout();else window.location.href='/logout'" class="btn-ghost-sm"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</a>
+  </div>
+  <!-- Hamburger on far RIGHT (mobile only) -->
+  <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+</nav>
+<div class="mobile-overlay" id="mobileOverlay"></div>
+<div class="mobile-drawer" id="mobileDrawer" role="dialog" aria-label="Navigation menu">
+  <div class="drawer-header">
+    <div class="drawer-brand">
+      <div class="logo-box"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M7 18a5 5 0 0 1 10 0"/></svg></div>
+      <span class="drawer-brand-name">Emotion Analysis</span>
+    </div>
+    <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close menu">&#x2715;</button>
+  </div>
+  <div class="mobile-drawer-divider"></div>
+  <ul>
+    <li><a href="/home"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</a></li>
+    <li><a href="/detect" class="active"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>Detect</a></li>
+    <li><a href="/faq"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>FAQ</a></li>
+    <li><a href="/feedback"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Feedback</a></li>
+  </ul>
+  <div class="mobile-drawer-divider"></div>
+  <div class="mobile-drawer-actions">
+    <a href="#" onclick="if(typeof Auth!=='undefined'&&Auth.logout)Auth.logout();else window.location.href='/logout'" class="btn-ghost-sm"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</a>
+  </div>
+</div>
+
+
+
+<div class="page">
+
+  <div class="how-strip">
+    <div class="how-strip-label">HOW TO USE</div>
+    <div class="how-steps-row">
+      <div class="how-step-box"><div class="how-step-label">Step 01</div><div class="how-step-title">Allow camera access</div><div class="how-step-desc">Grant browser permission to activate your webcam.</div></div>
+      <div class="how-step-box"><div class="how-step-label">Step 02</div><div class="how-step-title">Start a session</div><div class="how-step-desc">Click "Begin session" to start real-time tracking.</div></div>
+      <div class="how-step-box"><div class="how-step-label">Step 03</div><div class="how-step-title">Review analysis</div><div class="how-step-desc">View distribution, engagement, and session summary below.</div></div>
+    </div>
+  </div>
+
+  <div class="row1">
+    <div class="card cam-card">
+      <div class="cam-section-title">
+        <div class="cam-section-title-left">
+          <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Live detection
+        </div>
+        <div class="cam-live-chip" id="liveFeedChip" style="display:none"><div class="cam-live-chip-dot"></div>Live</div>
+      </div>
+      <div class="signal-bar" id="signalBar">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Weak Signal Detected — move closer to your router.
+      </div>
+      <div class="cam-box" id="camBox">
+        <div class="cam-idle" id="camIdle">
+          <div class="cam-idle-icon"><svg viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div>
+          <div class="cam-idle-text">Click "Start Session" to begin</div>
+        </div>
+        <video id="videoEl" autoplay muted playsinline></video>
+        <div class="cam-fps" id="camFps" style="display:none">30 fps</div>
+        <div class="cam-ring" id="camRing"></div>
+        <div class="cam-scan" id="camScan"></div>
+        <div class="cam-face-box" id="camFaceBox" style="top:20%;left:30%;width:38%;height:48%"></div>
+        <div class="cam-status" id="camStatus">
+          <div class="cam-status-dot ready" id="camStatusDot"></div>
+          <span class="cam-status-txt" id="camStatusTxt">READY</span>
+        </div>
+        <div class="cam-emotion-pill" id="camEmotionPill">
+          <span class="cam-emotion-pill-name" id="camEmotionName">—</span>
+          <span class="cam-emotion-pill-pct" id="camEmotionScore"></span>
+        </div>
+        <div class="reaction-bar" id="reactionBar">
+          <span class="rx-lbl">React</span>
+          <button class="rx-btn" onclick="sendReaction('thumbsup',this)">👍<span class="tt">Content is great!</span></button>
+          <button class="rx-btn" onclick="sendReaction('thumbsdown',this)">👎<span class="tt">Not clear</span></button>
+          <button class="rx-btn" onclick="sendReaction('handraise',this)">✋<span class="tt">Repeat / Doubt</span></button>
+          <button class="rx-btn" onclick="sendReaction('confused',this)">😕<span class="tt">Confused</span></button>
+          <button class="rx-btn" onclick="sendReaction('clap',this)">👏<span class="tt">Great explanation!</span></button>
+        </div>
+      </div>
+      <div class="cam-btn-row">
+        <button class="btn-start" id="btnStart" onclick="doStart()">
+          <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>Start Session
+        </button>
+        <button class="btn-stop" id="btnStop" onclick="doStop()" disabled>
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Stop
+        </button>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="card engage-card">
+        <div class="engage-section-title">
+          <div class="engage-section-title-left">
+            <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+            Engagement session flow
+          </div>
+          <span class="engage-last5">Last 5 min</span>
+        </div>
+        <div class="card-body">
+          <div class="engage-pie-wrap">
+            <div class="engage-pie-container" id="engagePieOuter">
+              <canvas id="engagePieCanvas" width="160" height="160"></canvas>
+              <div class="engage-pie-center">
+                <div class="engage-pie-score" id="engageScoreNum">—</div>
+                <div class="engage-pie-lbl">score</div>
+                <div id="engageTierLabel" style="margin-top:4px;font-size:10px;font-weight:700;letter-spacing:0.06em;color:var(--text3)">—</div>
+                <div class="engage-pie-dominant" id="engageDominantCenter" style="margin-top:3px;font-size:10px;color:var(--text3)"></div>
+              </div>
+              <div class="engage-pie-hover-tip" id="engagePieTip"></div>
+            </div>
+            <div class="engage-pie-legend" id="engagePieLegend">
+              <div class="engage-leg-item" id="engLegHappy"><div class="engage-leg-dot" style="background:#f59e0b"></div><span class="engage-leg-name">Happy</span></div>
+              <div class="engage-leg-item" id="engLegNeutral"><div class="engage-leg-dot" style="background:#6b7280"></div><span class="engage-leg-name">Neutral</span></div>
+              <div class="engage-leg-item" id="engLegSurprised"><div class="engage-leg-dot" style="background:#ec4899"></div><span class="engage-leg-name">Surprised</span></div>
+              <div class="engage-leg-item" id="engLegSad"><div class="engage-leg-dot" style="background:#3b82f6"></div><span class="engage-leg-name">Sad</span></div>
+              <div class="engage-leg-item" id="engLegAngry"><div class="engage-leg-dot" style="background:#ef4444"></div><span class="engage-leg-name">Angry</span></div>
+              <div class="engage-leg-item" id="engLegFear"><div class="engage-leg-dot" style="background:#a855f7"></div><span class="engage-leg-name">Fear</span></div>
+              <div class="engage-leg-item" id="engLegDisgust"><div class="engage-leg-dot" style="background:#10b981"></div><span class="engage-leg-name">Disgust</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card timeline-card">
+        <div class="timeline-section-title">
+          <div class="timeline-section-title-left">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Session timeline
+          </div>
+          <span style="font-size:10px;color:var(--text3);font-weight:500" id="timelineCountLabel">0 events</span>
+        </div>
+        <div id="timelineEmpty" class="timeline-empty">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div class="timeline-empty-text">Start a session to see the event timeline.</div>
+        </div>
+        <div id="timelineScrollWrap" class="timeline-scroll-wrap" style="display:none">
+          <div class="timeline-track" id="timelineTrack"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row2">
+    <div class="card dist-card">
+      <div class="dist-section-title">
+        <div class="dist-section-title-left">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Live emotion trend
+        </div>
+        <span class="dist-hover-hint">hover for details</span>
+      </div>
+      <div class="card-body">
+        <div class="dist-empty" id="distEmpty">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <div class="dist-empty-text">Start the camera to see emotion trend.</div>
+        </div>
+        <div id="distGraphArea" style="display:none;flex-direction:column">
+          <div class="dist-graph-wrap" style="position:relative">
+            <div class="dist-hover-tip" id="distHoverTip"></div>
+            <div class="dist-graph-canvas-wrap">
+              <canvas id="distTrendCanvas"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dist-graph-legend" id="distLegend" style="display:none">
+        <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#f59e0b"></div>Happy</div>
+        <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#ec4899"></div>Surprised</div>
+        <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#6b7280"></div>Neutral</div>
+        <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#3b82f6"></div>Sad</div>
+        <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#ef4444"></div>Angry</div>
+        <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#a855f7"></div>Fear</div>
+        <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#10b981"></div>Disgust</div>
+      </div>
+    </div>
+
+    <div class="card summary-card">
+      <div class="summary-section-title">
+        <span style="font-size:12.5px;font-weight:700;color:var(--text)">Session summary</span>
+        <span class="summary-session-chip" id="sessionChipLabel">Session #—</span>
+      </div>
+      <div class="stat-tiles">
+        <div class="stat-tile"><div class="stat-tile-label">Duration</div><div class="stat-tile-value" id="sumDuration">0:00</div><div class="stat-tile-sub">minutes</div></div>
+        <div class="stat-tile"><div class="stat-tile-label">Frames analyzed</div><div class="stat-tile-value" id="sumFrames">0</div><div class="stat-tile-sub" id="sumFramesSub">at 30 fps</div></div>
+        <div class="stat-tile"><div class="stat-tile-label">Peak emotion</div><div class="stat-tile-emotion" id="sumPeakEmotion">—</div><div class="stat-tile-emotion-sub" id="sumPeakConf"></div></div>
+        <div class="stat-tile"><div class="stat-tile-label">Engagement avg</div><div class="stat-tile-value" id="sumEngagAvg">—</div><div class="stat-tile-sub">out of 100</div></div>
+      </div>
+      <div class="dominant-section">
+        <div class="dominant-label">Dominant this session</div>
+        <div class="dominant-chips" id="dominantChips"><span style="font-size:11px;color:var(--text3);font-style:italic">No data yet</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card analysis-card">
+    <div class="analysis-hdr">
+      <div class="analysis-hdr-left">
+        <div class="analysis-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+        <div class="analysis-hdr-titles">
+          <div class="analysis-title">Overall analysis</div>
+          <div class="analysis-subtitle">All sessions combined</div>
+        </div>
+      </div>
+      <button class="btn-analyse" id="btnAnalyse" onclick="runOverallAnalysis()">
+        <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>Generate Analysis
+      </button>
+    </div>
+    <div class="analysis-inner" id="analysisInner">
+      <div class="analysis-left">
+        <div class="analysis-section-title">Emotion breakdown</div>
+        <div class="emo-category-cards" id="emoCategoryCards">
+          <div class="emo-cat-card emo-cat-positive" id="emoCatPositive">
+            <div class="emo-cat-header">
+              <div class="emo-cat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+              <div class="emo-cat-title">Positive</div>
+              <div class="emo-cat-pct" id="emoPosTotal">—%</div>
+            </div>
+            <div class="emo-cat-bar" id="emoPosBar" style="width:0%"></div>
+            <div class="emo-cat-tags" id="emoPosTags">
+              <span class="emo-tag emo-tag-happy" id="tagHappy">Happy <span class="emo-tag-pct" id="tagHappyPct">—%</span></span>
+              <span class="emo-tag emo-tag-surprised" id="tagSurprised">Surprised <span class="emo-tag-pct" id="tagSurprisedPct">—%</span></span>
+            </div>
+          </div>
+          <div class="emo-cat-card emo-cat-negative" id="emoCatNegative">
+            <div class="emo-cat-header">
+              <div class="emo-cat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+              <div class="emo-cat-title">Negative</div>
+              <div class="emo-cat-pct" id="emoNegTotal">—%</div>
+            </div>
+            <div class="emo-cat-bar" id="emoNegBar" style="width:0%"></div>
+            <div class="emo-cat-tags" id="emoNegTags">
+              <span class="emo-tag emo-tag-angry" id="tagAngry">Angry <span class="emo-tag-pct" id="tagAngryPct">—%</span></span>
+              <span class="emo-tag emo-tag-sad" id="tagSad">Sad <span class="emo-tag-pct" id="tagSadPct">—%</span></span>
+              <span class="emo-tag emo-tag-fearful" id="tagFear">Fear <span class="emo-tag-pct" id="tagFearPct">—%</span></span>
+              <span class="emo-tag emo-tag-disgusted" id="tagDisgust">Disgust <span class="emo-tag-pct" id="tagDisgustPct">—%</span></span>
+            </div>
+          </div>
+          <div class="emo-cat-card emo-cat-neutral" id="emoCatNeutral">
+            <div class="emo-cat-header">
+              <div class="emo-cat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+              <div class="emo-cat-title">Neutral</div>
+              <div class="emo-cat-pct" id="emoNeutralTotal">—%</div>
+            </div>
+            <div class="emo-cat-bar" id="emoNeuBar" style="width:0%"></div>
+            <div class="emo-cat-tags" id="emoNeutralTags">
+              <span class="emo-tag emo-tag-neutral" id="tagNeutral">Neutral <span class="emo-tag-pct" id="tagNeutralPct">—%</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="engage-score-chip" id="engScoreChip" style="display:none">
+          <div class="engage-score-chip-num" id="engScoreChipNum">74</div>
+          <div class="engage-score-chip-info">
+            <div class="engage-score-chip-title">Engagement score</div>
+            <div class="engage-score-chip-sub">Weighted sum across all emotion segments</div>
+          </div>
+        </div>
+      </div>
+      <div class="analysis-right">
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+          <div class="analysis-section-title">Key insights</div>
+          <div class="analysis-body" id="analysisBody">
+            <span class="analysis-empty">Stop the session and click "Generate Analysis" for an AI-powered summary of the session.</span>
+          </div>
+        </div>
+        <div class="tips-box" id="tipsBox">
+          <div class="tips-header">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Tips
+          </div>
+          <div class="tips-body" id="tipsBody">
+            <span style="font-size:10.5px;color:var(--text3);font-style:italic">Generate analysis to get personalized tips.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="script/auth.js"></script>
+<script src="script/pages/charts.js"></script>
+<script src="script/pages/timeline.js"></script>
+<script src="script/pages/analysis.js"></script>
+<script src="script/pages/livecam.js"></script>
+<script src="script/shared/drawer.js"></script>
+</body>
+</html>
