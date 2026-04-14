@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f97316' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7V5a2 2 0 0 1 2-2h2'/%3E%3Cpath d='M17 3h2a2 2 0 0 1 2 2v2'/%3E%3Cpath d='M21 17v2a2 2 0 0 1-2 2h-2'/%3E%3Cpath d='M7 21H5a2 2 0 0 1-2-2v-2'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3Cpath d='M7 18a5 5 0 0 1 10 0'/%3E%3C/svg%3E"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EmotionAI — Feedback</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,300;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
@@ -66,11 +67,10 @@ nav{height:64px;display:flex;align-items:center;padding:0 48px;gap:24px;backgrou
 .submit-btn svg{width:15px;height:15px;stroke:white;stroke-width:2}
 .error-msg{display:none;margin-top:12px;padding:10px 14px;border-radius:8px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);color:#dc2626;font-size:12px;font-weight:500}
 .error-msg.show{display:block}
-/* ── Thank-you / success state ── */
 .success-state{display:none;text-align:center;padding:24px 0}
 .success-state.show{display:block}
-.success-icon{width:56px;height:56px;border-radius:50%;background:rgba(34,197,94,0.1);border:1.5px solid rgba(34,197,94,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
-.success-icon svg{width:24px;height:24px;stroke:#22c55e;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.success-icon{width:60px;height:60px;border-radius:50%;background:rgba(34,197,94,0.1);border:1.5px solid rgba(34,197,94,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.success-icon svg{width:28px;height:28px;stroke:#22c55e;stroke-width:2}
 .success-state h3{font-family:var(--font-display);font-size:1.4rem;font-weight:600;margin-bottom:8px}
 .success-state p{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:20px}
 .reset-btn{padding:9px 22px;border-radius:99px;border:1.5px solid var(--border2);background:none;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font-body);color:var(--text2);transition:all 0.15s}
@@ -184,6 +184,7 @@ nav{position:sticky;top:0;z-index:100;height:64px;display:flex;flex-direction:ro
       <div class="rating-wrap">
         <span class="field-label">Overall experience</span>
         <div class="stars" id="stars">
+        <div class="stars" id="stars">
           <button class="star-btn" onclick="setRating(1)" aria-label="1 star"><svg viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg></button>
           <button class="star-btn" onclick="setRating(2)" aria-label="2 stars"><svg viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg></button>
           <button class="star-btn" onclick="setRating(3)" aria-label="3 stars"><svg viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg></button>
@@ -213,9 +214,7 @@ nav{position:sticky;top:0;z-index:100;height:64px;display:flex;flex-direction:ro
       </button>
     </div>
     <div class="success-state" id="successState">
-      <div class="success-icon">
-        <svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
-      </div>
+      <div class="success-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
       <h3>Thank you!</h3>
       <p>Your feedback has been received.<br/>We read every response and use it to improve EmotionAI.</p>
       <button class="reset-btn" onclick="resetForm()">Submit another</button>

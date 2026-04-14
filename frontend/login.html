@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>Emotion Analysis — Sign In</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f97316' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7V5a2 2 0 0 1 2-2h2'/%3E%3Cpath d='M17 3h2a2 2 0 0 1 2 2v2'/%3E%3Cpath d='M21 17v2a2 2 0 0 1-2 2h-2'/%3E%3Cpath d='M7 21H5a2 2 0 0 1-2-2v-2'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3Cpath d='M7 18a5 5 0 0 1 10 0'/%3E%3C/svg%3E"/>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,300;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="style/pages/login.css"/>
 </head>
@@ -45,7 +46,8 @@
     </div>
     <div class="field">
       <label>Email Address</label>
-      <input type="email" id="si-email" placeholder="you@example.com" autocomplete="email"/>
+      <input type="text" id="si-email" placeholder="you@gmail.com" autocomplete="email" oninput="liveGmailCheck(this,'msg-si-email')"/>
+      <div class="field-error" id="msg-si-email"></div>
     </div>
     <div class="field">
       <label>Password</label>
@@ -85,7 +87,8 @@
     </div>
     <div class="field">
       <label>Email Address</label>
-      <input type="email" id="su-email" placeholder="you@example.com" autocomplete="email"/>
+      <input type="text" id="su-email" placeholder="you@gmail.com" autocomplete="email" oninput="liveGmailCheck(this,'msg-su-email')"/>
+      <div class="field-error" id="msg-su-email"></div>
     </div>
     <div class="field">
       <label>Username</label>
@@ -194,7 +197,8 @@
     <div class="reset-step active" id="rs1">
       <div class="field">
         <label>Your Email Address</label>
-        <input type="email" id="rs-email" placeholder="Enter your registered email"/>
+        <input type="text" id="rs-email" placeholder="Enter your registered Gmail" oninput="liveGmailCheck(this,'msg-rs-email')"/>
+        <div class="field-error" id="msg-rs-email"></div>
       </div>
       <button class="btn-submit blue" id="btn-rs1" onclick="resetStep1()">
         <div class="spinner"></div><span class="btn-txt">Continue →</span>
@@ -268,7 +272,8 @@
     </div>
     <div class="field">
       <label>Admin Email</label>
-      <input type="email" id="ad-username" placeholder="admin@example.com" autocomplete="email"/>
+      <input type="text" id="ad-username" placeholder="admin@gmail.com" autocomplete="email" oninput="liveGmailCheck(this,'msg-ad-email')"/>
+      <div class="field-error" id="msg-ad-email"></div>
     </div>
     <div class="field" style="margin-bottom:18px">
       <label>Admin Password</label>

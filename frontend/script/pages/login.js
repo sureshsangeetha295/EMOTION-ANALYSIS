@@ -21,9 +21,7 @@ function switchTab(tab) {
   const [title, sub] = TITLES[tab];
   document.getElementById('card-title').textContent = title;
   document.getElementById('card-sub').textContent   = sub;
-  // Reset the reset flow when switching to reset tab
   if (tab === 'reset') goResetStep(1);
-  // Regenerate captcha when switching to signin
   if (tab === 'signin') setTimeout(generateCaptcha, 50);
 }
 
@@ -32,6 +30,58 @@ function togglePw(id, btn) {
   const hidden = inp.type === 'password';
   inp.type = hidden ? 'text' : 'password';
   btn.innerHTML = hidden ? EYE_CLOSE : EYE_OPEN;
+}
+
+/* ── Gmail validation ── */
+function validateGmail(email) {
+  if (!email || !email.trim()) return 'Please enter your email address.';
+  const t = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) return 'Please enter a valid email address.';
+  if (!t.endsWith('@gmail.com')) return 'Only Gmail addresses (@gmail.com) are accepted.';
+  return null;
+}
+function liveGmailCheck(input, errorId) {
+  const val = input.value.trim();
+  const errEl = document.getElementById(errorId);
+  if (!errEl) return;
+
+  // Clear and return silently if nothing typed yet
+  if (!val) { errEl.textContent = ''; errEl.classList.remove('visible'); return; }
+
+  // As soon as @ is present, validate the full email
+  if (val.includes('@')) {
+    const atIndex = val.indexOf('@');
+    const domain = val.slice(atIndex + 1).toLowerCase();
+
+    // Show error immediately if domain is being typed and it's not gmail.com
+    if (domain.length > 0 && !('gmail.com'.startsWith(domain)) && domain !== 'gmail.com') {
+      errEl.textContent = 'Only @gmail.com addresses are accepted.';
+      errEl.style.color = '#dc2626';
+      errEl.style.display = 'block';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    // Full validation once domain looks complete (has a dot)
+    if (domain.includes('.')) {
+      const msg = validateGmail(val);
+      if (msg) {
+        errEl.textContent = msg;
+        errEl.style.color = '#dc2626';
+        errEl.style.display = 'block';
+        errEl.classList.add('visible');
+      } else {
+        errEl.textContent = '';
+        errEl.style.display = '';
+        errEl.classList.remove('visible');
+      }
+      return;
+    }
+  }
+
+  errEl.textContent = '';
+  errEl.style.display = '';
+  errEl.classList.remove('visible');
 }
 
 /* ── Strength checker ── */
@@ -111,10 +161,11 @@ function goResetStep(n) {
   clearMsg('reset');
 }
 
-/* ── Reset Step 1: verify email via API ── */
+/* ── Reset Step 1 ── */
 async function resetStep1() {
   const email = document.getElementById('rs-email').value.trim();
-  if (!email) { showMsg('reset','error','Please enter your email address.'); return; }
+  const gmailErr = validateGmail(email);
+  if (gmailErr) { showMsg('reset','error', gmailErr); return; }
   clearMsg('reset');
   const btn = document.getElementById('btn-rs1'); btn.classList.add('loading');
   try {
@@ -133,7 +184,7 @@ async function resetStep1() {
   } catch(err) { btn.classList.remove('loading'); showMsg('reset','error',err.message); }
 }
 
-/* ── Reset Step 2: verify answers via API ── */
+/* ── Reset Step 2 ── */
 async function resetStep2() {
   const a1 = document.getElementById('rs-a1').value.trim().toLowerCase();
   const a2 = document.getElementById('rs-a2').value.trim().toLowerCase();
@@ -153,7 +204,7 @@ async function resetStep2() {
   } catch(err) { btn.classList.remove('loading'); showMsg('reset','error',err.message); }
 }
 
-/* ── Reset Step 3: set new password ── */
+/* ── Reset Step 3 ── */
 async function resetStep3() {
   const pw  = document.getElementById('rs-newpw').value;
   const cpw = document.getElementById('rs-confirmpw').value;
@@ -193,18 +244,15 @@ function generateCaptcha() {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
 
-  // Light papery background
   ctx.fillStyle = '#edeae4';
   ctx.fillRect(0, 0, W, H);
 
-  // Subtle texture noise
   for (let i = 0; i < 200; i++) {
     const a = Math.random() * 0.06;
     ctx.fillStyle = `rgba(0,0,0,${a})`;
     ctx.fillRect(Math.random()*W, Math.random()*H, 1.5, 1.5);
   }
 
-  // Grid lines (like reference image)
   ctx.strokeStyle = 'rgba(180,170,160,0.5)';
   ctx.lineWidth = 0.6;
   for (let x = 0; x < W; x += 12) {
@@ -214,7 +262,6 @@ function generateCaptcha() {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
 
-  // Wavy interference lines across full width
   for (let l = 0; l < 4; l++) {
     ctx.beginPath();
     ctx.strokeStyle = `rgba(${100+Math.random()*80},${80+Math.random()*60},${60+Math.random()*40},0.35)`;
@@ -227,47 +274,30 @@ function generateCaptcha() {
     ctx.stroke();
   }
 
-  // Draw each character — messy, overlapping, varied
   const charW = (W - 20) / code.length;
-  const fonts = [
-    'bold italic', 'bold', '900 italic', '800'
-  ];
+  const fonts = ['bold italic', 'bold', '900 italic', '800'];
   for (let i = 0; i < code.length; i++) {
     ctx.save();
     const cx = 10 + i * charW + charW * 0.5 + (Math.random() - 0.5) * 5;
     const cy = H / 2 + (Math.random() - 0.5) * 10;
     ctx.translate(cx, cy);
-
-    // Random rotation ±25°
     ctx.rotate((Math.random() - 0.5) * 0.85);
-
-    // Slight skew
     ctx.transform(1, (Math.random()-0.5)*0.3, (Math.random()-0.5)*0.25, 1, 0, 0);
-
     const sz = 22 + Math.random() * 8;
     const fw = fonts[Math.floor(Math.random() * fonts.length)];
     ctx.font = `${fw} ${sz}px 'Fraunces', Georgia, serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-
-    // Dark ink colors (black/navy/dark-brown — like real captcha)
-    const inkColors = [
-      '#1a1612','#1e2a4a','#2d1a0e','#0d2b1a','#3a1a2e','#1a2a3a'
-    ];
+    const inkColors = ['#1a1612','#1e2a4a','#2d1a0e','#0d2b1a','#3a1a2e','#1a2a3a'];
     const col = inkColors[Math.floor(Math.random() * inkColors.length)];
-
-    // Slight stroke for weight variation
     ctx.strokeStyle = col;
     ctx.lineWidth = Math.random() * 1.5;
     ctx.strokeText(code[i], 0, 0);
-
     ctx.fillStyle = col;
     ctx.fillText(code[i], 0, 0);
-
     ctx.restore();
   }
 
-  // Overlapping scratch marks on top
   for (let s = 0; s < 6; s++) {
     ctx.beginPath();
     ctx.strokeStyle = `rgba(80,60,40,${0.1 + Math.random()*0.12})`;
@@ -281,14 +311,12 @@ function generateCaptcha() {
     ctx.stroke();
   }
 
-  // Clear input & error
   const inp = document.getElementById('si-captcha');
   if (inp) inp.value = '';
   const err = document.getElementById('captcha-error');
   if (err) err.classList.remove('visible');
 }
 
-// Generate on load
 document.addEventListener('DOMContentLoaded', generateCaptcha);
 
 function resetActiveForm() {
@@ -298,6 +326,8 @@ function resetActiveForm() {
     document.getElementById('si-captcha').value  = '';
     clearMsg('signin');
     document.getElementById('captcha-error').classList.remove('visible');
+    const errEl = document.getElementById('msg-si-email');
+    if (errEl) { errEl.textContent = ''; errEl.classList.remove('visible'); }
     generateCaptcha();
     document.getElementById('si-email').focus();
   } else if (activeTab === 'signup') {
@@ -307,9 +337,9 @@ function resetActiveForm() {
     document.getElementById('sq1-q').selectedIndex = 0;
     document.getElementById('sq2-q').selectedIndex = 0;
     clearMsg('signup');
-    ['un-error','pw-error','confirm-error'].forEach(id => {
+    ['un-error','pw-error','confirm-error','msg-su-email'].forEach(id => {
       const el = document.getElementById(id);
-      el.textContent = ''; el.classList.remove('visible');
+      if (el) { el.textContent = ''; el.classList.remove('visible'); }
     });
     _applyStrength(0, 'sb');
     _applyStrength(0, 'rsb');
@@ -318,12 +348,16 @@ function resetActiveForm() {
     document.getElementById('ad-username').value = '';
     document.getElementById('ad-password').value = '';
     clearMsg('admin');
+    const errEl = document.getElementById('msg-ad-email');
+    if (errEl) { errEl.textContent = ''; errEl.classList.remove('visible'); }
     document.getElementById('ad-username').focus();
   } else if (activeTab === 'reset') {
     ['rs-email','rs-a1','rs-a2','rs-newpw','rs-confirmpw'].forEach(id => {
       document.getElementById(id).value = '';
     });
     clearMsg('reset');
+    const errEl = document.getElementById('msg-rs-email');
+    if (errEl) { errEl.textContent = ''; errEl.classList.remove('visible'); }
     goResetStep(1);
   }
 }
@@ -335,9 +369,15 @@ async function handleSignIn() {
   const captchaInput = document.getElementById('si-captcha').value.trim();
   const captchaErr   = document.getElementById('captcha-error');
 
-  if (!email||!password) { showMsg('signin','error','Please enter your email and password.'); return; }
+  if (!email || !password) { showMsg('signin','error','Please enter your email and password.'); return; }
+  const gmailErr = validateGmail(email);
+  if (gmailErr) {
+    showMsg('signin','error', gmailErr);
+    const fieldErr = document.getElementById('msg-si-email');
+    if (fieldErr) { fieldErr.textContent = gmailErr; fieldErr.style.color='#dc2626'; fieldErr.style.display='block'; fieldErr.classList.add('visible'); }
+    return;
+  }
 
-  // Validate CAPTCHA
   if (!captchaInput) {
     captchaErr.textContent = 'Please enter the verification code.';
     captchaErr.classList.add('visible');
@@ -377,6 +417,13 @@ async function handleSignUp() {
   const sq2a     = document.getElementById('sq2-a').value.trim();
 
   if (!email||!username||!password) { showMsg('signup','error','Please fill in all required fields.'); return; }
+  const gmailErr = validateGmail(email);
+  if (gmailErr) {
+    showMsg('signup','error', gmailErr);
+    const fieldErr = document.getElementById('msg-su-email');
+    if (fieldErr) { fieldErr.textContent = gmailErr; fieldErr.style.color='#dc2626'; fieldErr.style.display='block'; fieldErr.classList.add('visible'); }
+    return;
+  }
   const unErr = validateUsername(username); if (unErr) { showMsg('signup','error',unErr); return; }
   const pwErr = validatePassword(password); if (pwErr) { showMsg('signup','error',pwErr); return; }
   if (password!==confirm) { showMsg('signup','error','Passwords do not match.'); return; }
@@ -395,7 +442,6 @@ async function handleSignUp() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail||'Registration failed');
 
-    // Store security questions locally for password recovery
     const qMap = {
       school:'What was the name of your first school?',pet:'What was the name of your first pet?',
       city:'In what city were you born?',mother:"What is your mother's maiden name?",
@@ -421,6 +467,13 @@ async function handleAdmin() {
   const username = document.getElementById('ad-username').value.trim();
   const password = document.getElementById('ad-password').value;
   if (!username||!password) { showMsg('admin','error','Please enter admin email and password.'); return; }
+  const gmailErr = validateGmail(username);
+  if (gmailErr) {
+    showMsg('admin','error', gmailErr);
+    const fieldErr = document.getElementById('msg-ad-email');
+    if (fieldErr) { fieldErr.textContent = gmailErr; fieldErr.style.color='#dc2626'; fieldErr.style.display='block'; fieldErr.classList.add('visible'); }
+    return;
+  }
   clearMsg('admin');
   const btn = document.getElementById('btn-admin'); btn.classList.add('loading');
   try {
