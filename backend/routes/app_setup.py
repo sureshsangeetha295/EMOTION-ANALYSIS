@@ -1,4 +1,5 @@
 from __future__ import annotations
+from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -15,6 +16,7 @@ if TYPE_CHECKING:
     from routes.db import init_db  # noqa: F401
 
 
+@asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
     try:

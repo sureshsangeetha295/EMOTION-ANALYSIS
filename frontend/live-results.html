@@ -1,121 +1,113 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f97316' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7V5a2 2 0 0 1 2-2h2'/%3E%3Cpath d='M17 3h2a2 2 0 0 1 2 2v2'/%3E%3Cpath d='M21 17v2a2 2 0 0 1-2 2h-2'/%3E%3Cpath d='M7 21H5a2 2 0 0 1-2-2v-2'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3Cpath d='M7 18a5 5 0 0 1 10 0'/%3E%3C/svg%3E"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>EmotionAI — Live Results</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,300;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./style/app.css"/>
-<link rel="stylesheet" href="style/pages/live-results.css"/>
-<script src="script/auth.js"></script>
-</head>
-<body>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+:root{
+  --bg:#faf9f7;--surface:#fff;--elevated:#f4f2ef;
+  --accent:#e8440a;--accent2:#f06940;--accent-dim:rgba(232,68,10,0.08);--accent-glow:rgba(232,68,10,0.2);
+  --grad:linear-gradient(135deg,#e8440a,#f59e4a);
+  --text:#1a1612;--text2:#6b6560;--text3:#a8a29e;
+  --border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.12);
+  --shadow-sm:0 1px 4px rgba(0,0,0,0.06),0 2px 8px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.08);
+  --font-display:'Fraunces',Georgia,serif;
+  --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
+}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
+nav{height:64px;display:flex;align-items:center;padding:0 48px;gap:24px;background:rgba(250,249,247,0.97);border-bottom:1px solid var(--border);backdrop-filter:blur(20px);position:sticky;top:0;left:0;right:0;width:100%;z-index:100}
+.nav-logo{font-family:var(--font-display);font-weight:600;font-size:1.1rem;display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);flex:1 1 auto;min-width:0}
+.nav-logo-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logo-box{width:38px;height:38px;border-radius:10px;background:var(--grad);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px var(--accent-glow);flex-shrink:0}
+.nav-links{display:flex;gap:28px;list-style:none}
+.nav-links a{font-size:13px;color:var(--text2);text-decoration:none;font-weight:500}
+.nav-links a:hover,.nav-links a.active{color:var(--accent)}
 
-<div class="top-bar">
-  <a href="index.html" class="logo">EmotionAI</a>
-  <span class="page-title">/ Live Results</span>
-  <div class="live-indicator off" id="live-indicator">
-    <div class="live-pip"></div>
-    <span id="live-indicator-text">Waiting for live session...</span>
-  </div>
-  <a href="app.html" class="back-btn">← Back to camera</a>
-  <!-- Hamburger — far right, mobile only -->
-  <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
-</div>
+.page-wrap{width:100%;max-width:560px;margin:0 auto;padding:56px 24px 80px}
+.page-header{margin-bottom:40px}
+.page-header h1{font-family:var(--font-display);font-size:clamp(2rem,4vw,3rem);font-weight:600;letter-spacing:-0.02em;line-height:1.1;margin-bottom:10px}
+.page-header h1 em{font-style:italic;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.page-header p{font-size:14px;color:var(--text2);line-height:1.7}
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;box-shadow:var(--shadow-md)}
+.field-label{display:block;font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px}
+.rating-wrap{margin-bottom:24px}
+.stars{display:flex;gap:4px;margin-top:6px}
+.star-btn{width:40px;height:40px;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:4px;transition:transform 0.15s ease;border-radius:8px}
+.star-btn:hover{transform:scale(1.2)}
+.star-btn:active{transform:scale(1.05)}
+.star-btn svg{width:28px;height:28px;transition:fill 0.15s ease,stroke 0.15s ease,filter 0.15s ease}
+/* unlit: outline only */
+.star-btn svg{fill:none;stroke:#d1c4a8;stroke-width:1.8}
+/* hover preview & lit: filled amber with glow */
+.star-btn.lit svg,.star-btn.preview svg{fill:#f59e0b;stroke:#f59e0b;stroke-width:1.5;filter:drop-shadow(0 0 4px rgba(245,158,11,0.5))}
+.cat-wrap{margin-bottom:24px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+.chip{padding:7px 16px;border-radius:99px;font-size:12px;font-weight:500;border:1.5px solid var(--border2);background:var(--surface);cursor:pointer;transition:all 0.15s;color:var(--text2);font-family:var(--font-body)}
+.chip:hover{border-color:rgba(232,68,10,0.3);color:var(--accent)}
+.chip.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);font-weight:600}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px}
+.field .label-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.field .label-row label{margin-bottom:0}
+.required-badge{font-size:10px;font-weight:700;color:#fff;background:var(--accent);padding:1px 6px;border-radius:4px;letter-spacing:.03em}
+.optional-badge{font-size:10px;font-weight:600;color:var(--text3);background:var(--elevated);padding:1px 6px;border-radius:4px;letter-spacing:.03em}
+.field input,.field textarea{width:100%;padding:11px 14px;border:1.5px solid var(--border2);border-radius:9px;font-size:13px;font-family:var(--font-body);color:var(--text);background:var(--surface);transition:all 0.15s;outline:none;resize:none}
+.field input:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.field input::placeholder,.field textarea::placeholder{color:var(--text3)}
+.field textarea{height:120px;line-height:1.6}
+.submit-btn{width:100%;padding:13px;border-radius:10px;background:var(--grad);color:#fff;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:var(--font-body);box-shadow:0 4px 14px var(--accent-glow);transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+.submit-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px var(--accent-glow)}
+.submit-btn:disabled{opacity:0.65;cursor:not-allowed;transform:none}
+.submit-btn svg{width:15px;height:15px;stroke:white;stroke-width:2}
+.error-msg{display:none;margin-top:12px;padding:10px 14px;border-radius:8px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);color:#dc2626;font-size:12px;font-weight:500}
+.error-msg.show{display:block}
+/* ── Thank-you / success state ── */
+.success-state{display:none;text-align:center;padding:24px 0}
+.success-state.show{display:block}
+.success-icon{width:56px;height:56px;border-radius:50%;background:rgba(34,197,94,0.1);border:1.5px solid rgba(34,197,94,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.success-icon svg{width:24px;height:24px;stroke:#22c55e;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.success-state h3{font-family:var(--font-display);font-size:1.4rem;font-weight:600;margin-bottom:8px}
+.success-state p{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:20px}
+.reset-btn{padding:9px 22px;border-radius:99px;border:1.5px solid var(--border2);background:none;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font-body);color:var(--text2);transition:all 0.15s}
+.reset-btn:hover{border-color:var(--accent);color:var(--accent)}
 
-<div class="mobile-overlay" id="mobileOverlay"></div>
-<div class="mobile-drawer" id="mobileDrawer" role="dialog" aria-label="Navigation menu">
-  <div class="drawer-header">
-    <div class="drawer-brand">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M7 18a5 5 0 0 1 10 0"/></svg>
-      Emotion Analysis
-    </div>
-    <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close menu">&#x2715;</button>
-  </div>
-  <div class="drawer-divider"></div>
-  <ul>
-    <li><a href="/home"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</a></li>
-    <li><a href="/livecam"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>Live Cam</a></li>
-    <li><a href="/faq"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>FAQ</a></li>
-    <li><a href="/feedback"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Feedback</a></li>
-  </ul>
-  <div class="drawer-divider"></div>
-  <div class="drawer-actions">
-    <a href="#" onclick="if(typeof Auth!=='undefined'&&Auth.logout)Auth.logout();else window.location.href='/logout'" class="drawer-logout">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout
-    </a>
-  </div>
-</div>
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:15px;height:15px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0}
 
-<div class="main">
-
-  <!-- offline banner -->
-  <div class="no-live-banner" id="no-live-banner">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-    No live session active — open the camera page, start your camera, then click <strong style="margin:0 4px;">Go Live</strong>
-  </div>
-
-  <!-- hero -->
-  <div class="hero-card" id="hero-card">
-    <div class="hero-icon-wrap" id="hero-icon">
-      <span style="font-size:38px;opacity:0.15">◉</span>
-    </div>
-    <div>
-      <div class="hero-waiting" id="hero-emotion">Waiting for detection...</div>
-      <div class="hero-conf" id="hero-conf"></div>
-      <div class="hero-ms"  id="hero-ms"></div>
-    </div>
-  </div>
-
-  <!-- right column -->
-  <div class="right-col">
-    <div class="stats-card">
-      <div class="card-label">Session stats</div>
-      <div class="stats-grid">
-        <div class="stat-box">
-          <div class="stat-label">Detections</div>
-          <div class="stat-val" id="stat-count">0</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">Avg latency</div>
-          <div class="stat-val accent" id="stat-ms">—</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">Top emotion</div>
-          <div class="stat-val" id="stat-top" style="font-size:14px;line-height:1.4">—</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">Session time</div>
-          <div class="stat-val" id="stat-time">0:00</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="history-card">
-      <div class="card-label">Detection history</div>
-      <div class="history-list" id="history-list">
-        <div class="history-empty" id="history-empty">No detections yet</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- probability bars -->
-  <div class="bars-card">
-    <div class="card-label">All probabilities</div>
-    <div id="prob-bars-live"></div>
-  </div>
-
-  <!-- sparkline -->
-  <div class="sparkline-card">
-    <div class="card-label">Emotion timeline</div>
-    <div class="spark-row" id="spark-row"></div>
-  </div>
-
-</div>
-
-
-<script src="script/pages/live-results.js"></script>
-<script src="script/shared/drawer.js"></script>
-</body>
-</html>
+/* ── NAV ── */
+nav{position:sticky;top:0;z-index:100;height:64px;display:flex;flex-direction:row;align-items:center;padding:0 48px;gap:24px;background:rgba(250,249,247,0.92);border-bottom:1px solid var(--border);backdrop-filter:blur(20px)}
+.nav-logo-wrap{display:flex;align-items:center;flex-shrink:0}
+.nav-logo{font-family:var(--font-display);font-weight:600;font-size:1.1rem;display:flex;flex-direction:row;align-items:center;gap:8px;text-decoration:none;color:var(--text);white-space:nowrap}
+.logo-box{width:30px;height:30px;border-radius:8px;background:var(--grad);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px var(--accent-glow);flex-shrink:0}
+.nav-spacer{flex:1}
+.nav-links{display:flex !important;flex-direction:row !important;gap:28px;list-style:none;margin:0;padding:0;align-items:center}
+.nav-links li{display:flex;align-items:center}
+.nav-links a{font-size:13px;color:var(--text2);text-decoration:none;font-weight:500;transition:color 0.15s;white-space:nowrap}
+.nav-links a:hover,.nav-links a.active{color:var(--accent)}
+.nav-actions{display:flex !important;flex-direction:row !important;gap:10px;align-items:center;flex-shrink:0}
+.btn-ghost-sm{font-size:13px;font-weight:600;padding:7px 16px;border-radius:99px;border:1.5px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;text-decoration:none;transition:all 0.15s;display:inline-flex;flex-direction:row;align-items:center;gap:6px;white-space:nowrap;font-family:var(--font-body)}
+.btn-ghost-sm:hover{border-color:var(--accent);color:var(--accent)}
+/* Hamburger — far right, mobile only */
+.hamburger-btn{display:none !important;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:36px;height:36px;background:transparent;border:1.5px solid var(--border2);border-radius:8px;cursor:pointer;padding:0;flex-shrink:0}
+.hamburger-btn span{display:block;width:16px;height:2px;background:var(--text);border-radius:2px;transition:transform 0.25s ease,opacity 0.2s ease;transform-origin:center}
+.hamburger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+/* Drawer slides in from LEFT */
+.mobile-drawer{position:fixed;top:0;left:0;bottom:0;width:280px;max-width:82vw;background:rgba(250,249,247,0.99);backdrop-filter:blur(24px);border-right:1px solid var(--border);z-index:999;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);box-shadow:4px 0 32px rgba(0,0,0,0.12);visibility:hidden}
+.mobile-drawer.open{transform:translateX(0);visibility:visible}
+.mobile-drawer ul{list-style:none;padding:8px 0;flex:1;margin:0}
+.mobile-drawer ul li a{display:flex;align-items:center;gap:12px;width:100%;padding:13px 24px;font-size:14px;font-weight:500;color:var(--text);text-decoration:none;background:none;border:none;cursor:pointer;font-family:var(--font-body);transition:background 0.12s,color 0.12s}
+.mobile-drawer ul li a:hover,.mobile-drawer ul li a.active{background:var(--elevated);color:var(--accent)}
+.mobile-drawer-divider{height:1px;background:var(--border);margin:6px 20px}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 16px;border-bottom:1px solid var(--border)}
+.drawer-brand{display:flex;align-items:center;gap:10px}
+.drawer-brand-name{font-family:var(--font-display);font-weight:600;font-size:1rem;color:var(--text)}
+.drawer-close-btn{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.drawer-close-btn:hover{background:var(--elevated);color:var(--text)}
+.mobile-drawer-actions{padding:12px 20px 20px;margin-top:auto;border-top:1px solid var(--border)}
+.mobile-drawer-actions .btn-ghost-sm{width:100%;justify-content:center;border-radius:12px;padding:11px 16px;font-size:14px}
+.mobile-overlay{display:none;position:fixed;inset:0;z-index:998;background:rgba(0,0,0,0.25)}
+.mobile-overlay.open{display:block}
+@media(max-width:768px){
+  nav{padding:0 16px}
+  .nav-links,.nav-actions{display:none !important}
+  .hamburger-btn{display:flex !important}
+}
