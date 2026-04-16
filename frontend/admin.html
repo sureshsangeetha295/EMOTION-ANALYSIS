@@ -92,6 +92,7 @@
 <!-- CONTENT -->
 <div class="content">
   <div class="panel">
+
     <!-- Panel header with tabs -->
     <div class="panel-header">
       <div class="table-tabs">
@@ -111,11 +112,15 @@
           <svg class="ttab-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           FAQ Feedback <span class="ttab-badge" id="badge-faq-feedback">—</span>
         </button>
+        <button class="ttab" onclick="switchTable('manage-faqs')" id="ttab-manage-faqs">
+          <svg class="ttab-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Manage FAQs <span class="ttab-badge" id="badge-manage-faqs">—</span>
+        </button>
       </div>
     </div>
 
-    <!-- Toolbar -->
-    <div class="toolbar">
+    <!-- DEFAULT Toolbar: Users / Detections / Feedback / FAQ Feedback -->
+    <div class="toolbar" id="toolbar-default">
       <div class="search-wrap" id="search-wrap">
         <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input class="search-input" id="search-input" placeholder="Search…" oninput="onSearch()"/>
@@ -131,21 +136,43 @@
       <span class="count-badge" id="count-badge"></span>
     </div>
 
+    <!-- FAQ MANAGEMENT Toolbar: Search + Add FAQ + Refresh -->
+    <div class="toolbar" id="toolbar-faqs" style="display:none;">
+      <div class="search-wrap" id="faq-search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" id="faq-search-input" placeholder="Search FAQs…" oninput="onFaqSearch()"/>
+        <button class="search-clear" id="faq-search-clear" onclick="clearFaqSearch()" title="Clear search" style="display:none;">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <button class="refresh-btn" onclick="openAddFaqModal()"
+        style="background:var(--accent,#f97316);color:#fff;border-color:transparent;gap:5px;">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add FAQ
+      </button>
+      <button class="refresh-btn" id="faq-refresh-btn" onclick="onRefresh()">
+        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+      <span class="count-badge" id="faq-count-badge"></span>
+    </div>
+
     <!-- Table -->
     <div class="panel-table-wrap">
-    <table class="data-table" id="data-table">
-      <thead id="table-head"></thead>
-      <tbody id="table-body"><tr class="loading-row"><td colspan="10"><div class="spin"></div></td></tr></tbody>
-    </table>
+      <table class="data-table" id="data-table">
+        <thead id="table-head"></thead>
+        <tbody id="table-body"><tr class="loading-row"><td colspan="10"><div class="spin"></div></td></tr></tbody>
+      </table>
     </div>
     <div class="pagination" id="pagination"></div>
+
   </div>
 </div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Confirm Modal -->
+<!-- Confirm / Delete Modal -->
 <div class="modal-bg" id="modal-bg">
   <div class="modal">
     <div class="modal-icon">
@@ -156,6 +183,39 @@
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeModal()">Cancel</button>
       <button class="modal-confirm" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ Add / Edit Modal -->
+<div class="modal-bg" id="faq-modal-bg" style="display:none;">
+  <div class="modal" style="max-width:540px;width:90%">
+    <h3 id="faq-modal-title">Add FAQ</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px;">
+      <div>
+        <label style="font-size:12px;color:var(--text2);font-weight:600;display:block;margin-bottom:4px;">Category</label>
+        <select id="faq-form-cat" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--elevated);color:var(--text1);font-size:13px;">
+          <option value="general">General</option>
+          <option value="detection">Detection</option>
+          <option value="analysis">Analysis &amp; Insights</option>
+          <option value="privacy">Privacy &amp; Security</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text2);font-weight:600;display:block;margin-bottom:4px;">Question</label>
+        <input id="faq-form-q" type="text" placeholder="Enter the FAQ question…"
+          style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--elevated);color:var(--text1);font-size:13px;box-sizing:border-box;"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text2);font-weight:600;display:block;margin-bottom:4px;">Answer</label>
+        <textarea id="faq-form-a" rows="5" placeholder="Enter the FAQ answer…"
+          style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--elevated);color:var(--text1);font-size:13px;resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>
+      </div>
+      <div id="faq-form-err" style="color:#ef4444;font-size:12px;display:none;"></div>
+    </div>
+    <div class="modal-btns" style="margin-top:18px;">
+      <button class="modal-cancel" onclick="closeFaqModal()">Cancel</button>
+      <button class="modal-confirm" id="faq-form-submit-btn" onclick="submitFaqForm()">Add FAQ</button>
     </div>
   </div>
 </div>

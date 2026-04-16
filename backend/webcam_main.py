@@ -21,6 +21,29 @@ prev_time   = time.time()
 enter_pressed = False
 face_miss     = 0
 
+
+def apply_boundary_guards(probs: np.ndarray) -> int:
+    """
+    Returns the index of the highest-confidence emotion, with guard logic:
+    - Suppresses 'contempt'/'disgust' unless confidence is significantly dominant
+    - Falls back to the next best class if top confidence is below a threshold
+    """
+    SUPPRESSED = {"contempt", "disgust"}          # easily mispredicted classes
+    MIN_CONF   = 0.25                             # minimum confidence to accept top pick
+
+    order = np.argsort(probs)[::-1]               # descending by confidence
+
+    for idx in order:
+        label = CLASS_NAMES[idx]
+        conf  = probs[idx]
+        if label in SUPPRESSED and conf < 0.50:   # only allow if clearly dominant
+            continue
+        if conf >= MIN_CONF:
+            return int(idx)
+
+    return int(np.argmax(probs))                  # absolute fallback
+
+
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH,  1280)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)

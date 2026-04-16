@@ -672,6 +672,18 @@ def init_db():
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_faqfb_vote    ON faq_feedback(vote)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_faqfb_created ON faq_feedback(created_at)")
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS faqs (
+            id         BIGSERIAL    PRIMARY KEY,
+            category   VARCHAR(80)  NOT NULL DEFAULT 'general',
+            question   TEXT         NOT NULL,
+            answer     TEXT         NOT NULL,
+            created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_faqs_category ON faqs(category)")
     con.commit()
 
     admin_email_clean = ADMIN_EMAIL.strip().lower()
@@ -812,6 +824,16 @@ class FaqFeedbackRequest(BaseModel):
     faq_question: str
     vote:         str            # "liked" or "disliked"
     complaint:    Optional[str] = None
+
+class FAQCreate(BaseModel):
+    category: str = "general"
+    question: str
+    answer:   str
+
+class FAQUpdate(BaseModel):
+    category: Optional[str] = None
+    question: Optional[str] = None
+    answer:   Optional[str] = None
 
 
 # =============================================================================
@@ -1783,6 +1805,95 @@ async def delete_faq_feedback_row(row_id: int, admin: dict = Depends(get_admin_u
     try:
         cur.execute("DELETE FROM faq_feedback WHERE id=%s", (row_id,))
         con.commit(); return {"message": "Deleted"}
+    finally:
+        cur.close(); con.close()
+
+
+# =============================================================================
+#  FAQ MANAGEMENT  (CRUD)
+# =============================================================================
+
+@app.get("/api/faqs")
+async def public_list_faqs():
+    """Public endpoint — used by faq.html to load dynamic FAQs."""
+    con = db_conn(); cur = con.cursor()
+    try:
+        cur.execute("SELECT id, category, question, answer FROM faqs ORDER BY id ASC")
+        rows = fetchall(cur)
+        return rows
+    finally:
+        cur.close(); con.close()
+
+
+@app.get("/admin/faqs")
+async def admin_list_faqs(admin: dict = Depends(get_admin_user)):
+    """Admin — list all FAQs with timestamps."""
+    con = db_conn(); cur = con.cursor()
+    try:
+        cur.execute(
+            "SELECT id, category, question, answer, created_at, updated_at FROM faqs ORDER BY id ASC"
+        )
+        rows = fetchall(cur)
+        return rows
+    finally:
+        cur.close(); con.close()
+
+
+@app.post("/admin/faqs", status_code=201)
+async def admin_create_faq(payload: FAQCreate, admin: dict = Depends(get_admin_user)):
+    """Admin — create a new FAQ entry."""
+    if not payload.question.strip() or not payload.answer.strip():
+        raise HTTPException(status_code=422, detail="Question and answer are required")
+    con = db_conn(); cur = con.cursor()
+    try:
+        cur.execute(
+            "INSERT INTO faqs (category, question, answer) VALUES (%s,%s,%s) RETURNING id",
+            (payload.category.strip(), payload.question.strip(), payload.answer.strip())
+        )
+        faq_id = cur.fetchone()[0]
+        con.commit()
+        return {"id": faq_id, "message": "FAQ created successfully"}
+    finally:
+        cur.close(); con.close()
+
+
+@app.put("/admin/faqs/{faq_id}")
+async def admin_update_faq(faq_id: int, payload: FAQUpdate, admin: dict = Depends(get_admin_user)):
+    """Admin — update an existing FAQ entry."""
+    con = db_conn(); cur = con.cursor()
+    try:
+        cur.execute("SELECT id FROM faqs WHERE id=%s", (faq_id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="FAQ not found")
+        fields, values = [], []
+        if payload.category is not None:
+            fields.append("category = %s"); values.append(payload.category.strip())
+        if payload.question is not None:
+            fields.append("question = %s"); values.append(payload.question.strip())
+        if payload.answer is not None:
+            fields.append("answer = %s");   values.append(payload.answer.strip())
+        if not fields:
+            raise HTTPException(status_code=422, detail="No fields to update")
+        fields.append("updated_at = NOW()")
+        values.append(faq_id)
+        cur.execute(f"UPDATE faqs SET {', '.join(fields)} WHERE id = %s", values)
+        con.commit()
+        return {"message": "FAQ updated successfully"}
+    finally:
+        cur.close(); con.close()
+
+
+@app.delete("/admin/faqs/{faq_id}")
+async def admin_delete_faq(faq_id: int, admin: dict = Depends(get_admin_user)):
+    """Admin — delete a FAQ entry."""
+    con = db_conn(); cur = con.cursor()
+    try:
+        cur.execute("SELECT id FROM faqs WHERE id=%s", (faq_id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="FAQ not found")
+        cur.execute("DELETE FROM faqs WHERE id=%s", (faq_id,))
+        con.commit()
+        return {"message": "FAQ deleted successfully"}
     finally:
         cur.close(); con.close()
 

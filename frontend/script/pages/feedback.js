@@ -1,3 +1,13 @@
+// ── launchApp: same logic as landing page ──
+function launchApp(e) {
+  if (e) e.preventDefault();
+  if (typeof Auth !== 'undefined' && Auth.isLoggedIn && Auth.isLoggedIn()) {
+    window.location.href = '/livecam';
+  } else {
+    window.location.href = '/login';
+  }
+}
+
 // ── Auth loader ──
 (function(){var s=document.createElement('script');s.src='script/auth.js';s.onerror=function(){window.__authJsFailed=true;};document.head.appendChild(s);})();
 

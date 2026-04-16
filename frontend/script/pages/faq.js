@@ -1,3 +1,13 @@
+/* ── launchApp: same logic as landing page ── */
+function launchApp(e) {
+  if (e) e.preventDefault();
+  if (typeof Auth !== 'undefined' && Auth.isLoggedIn && Auth.isLoggedIn()) {
+    window.location.href = '/livecam';
+  } else {
+    window.location.href = '/login';
+  }
+}
+
 /* ── FAQ logic ── */
 function toggleFAQ(item){item.classList.toggle('open');}
 

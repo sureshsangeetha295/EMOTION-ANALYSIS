@@ -153,7 +153,3 @@ def init_db():
     con.commit(); cur.close(); con.close()
     print("[EmotionAI] Database initialised")
 
-
-# =============================================================================
-#  LIFESPAN  (decorator only — function body continues in main.py / app_setup.py)
-# =============================================================================

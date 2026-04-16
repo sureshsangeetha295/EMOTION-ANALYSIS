@@ -19,9 +19,8 @@ async function boot() {
   if (!TOKEN()) { window.location.href = '/login'; return; }
   const me = await apiFetch('/auth/me');
   if (!me || !me.is_admin) { window.location.href = '/login'; return; }
-  // Load stats AND all badge counts in parallel
   loadStats();
-  loadAllBadges();  // ← FIX: pre-fetch all badge counts upfront
+  loadAllBadges();
   loadTable();
 }
 
@@ -33,18 +32,20 @@ async function apiFetch(url, opts={}) {
   } catch { return null; }
 }
 
-/* ── FIX: Load all badge counts upfront so tabs show correct values immediately ── */
+/* ── Load all badge counts upfront ── */
 async function loadAllBadges() {
-  const [users, detections, feedback, faqFeedback] = await Promise.all([
+  const [users, detections, feedback, faqFeedback, faqs] = await Promise.all([
     apiFetch('/admin/users'),
     apiFetch('/admin/detections'),
     apiFetch('/admin/feedback'),
     apiFetch('/admin/faq-feedback'),
+    apiFetch('/admin/faqs'),
   ]);
-  if (Array.isArray(users))        document.getElementById('badge-users').textContent           = users.length;
-  if (Array.isArray(detections))   document.getElementById('badge-detections').textContent       = detections.length;
-  if (Array.isArray(feedback))     document.getElementById('badge-feedback').textContent         = feedback.length;
-  if (Array.isArray(faqFeedback))  document.getElementById('badge-faq-feedback').textContent     = faqFeedback.length;
+  if (Array.isArray(users))       document.getElementById('badge-users').textContent       = users.length;
+  if (Array.isArray(detections))  document.getElementById('badge-detections').textContent  = detections.length;
+  if (Array.isArray(feedback))    document.getElementById('badge-feedback').textContent    = feedback.length;
+  if (Array.isArray(faqFeedback)) document.getElementById('badge-faq-feedback').textContent = faqFeedback.length;
+  if (Array.isArray(faqs))        document.getElementById('badge-manage-faqs').textContent = faqs.length;
 }
 
 /* ── Stats ── */
@@ -66,7 +67,6 @@ async function loadStats() {
   } else {
     document.getElementById('s-engagement').textContent = '—';
   }
-  // Animate bars (relative to detections as reference)
   const maxVal = Math.max(u, de, fb, 1);
   setTimeout(() => {
     document.getElementById('bar-users').style.width      = (u  / maxVal * 90) + '%';
@@ -102,30 +102,52 @@ function animateDecimal(id, target, suffix='') {
 /* ── Table switching ── */
 function switchTable(name) {
   currentTable = name; page = 1;
-  document.getElementById('search-input').value = '';
-  document.getElementById('search-wrap').classList.remove('has-value');
+
+  const isFaqs = name === 'manage-faqs';
+  document.getElementById('toolbar-default').style.display = isFaqs ? 'none' : '';
+  document.getElementById('toolbar-faqs').style.display    = isFaqs ? ''     : 'none';
+
+  if (!isFaqs) {
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-wrap').classList.remove('has-value');
+  } else {
+    const fi = document.getElementById('faq-search-input');
+    if (fi) fi.value = '';
+  }
+
   document.querySelectorAll('.ttab').forEach(b => b.classList.remove('active'));
   document.getElementById('ttab-'+name).classList.add('active');
   loadTable();
 }
 
 async function loadTable() {
+  if (currentTable === 'manage-faqs') {
+    showLoading();
+    document.getElementById('pagination').innerHTML = '';
+    document.getElementById('faq-count-badge').textContent = '';
+    await loadManageFaqs();
+    return;
+  }
   showLoading();
   const endpoints = { users:'/admin/users', detections:'/admin/detections', feedback:'/admin/feedback', 'faq-feedback':'/admin/faq-feedback' };
   const data = await apiFetch(endpoints[currentTable]);
   allData = Array.isArray(data) ? data : [];
   allData.sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
-  // Update the badge for current tab (keep others at whatever loadAllBadges set)
   document.getElementById('badge-'+currentTable).textContent = allData.length;
   setupFilters(); applyFilters();
 }
 
 async function onRefresh() {
   const btn = document.getElementById('refresh-btn');
-  btn.classList.add('spinning');
+  if (btn) btn.classList.add('spinning');
+  const faqBtn = document.getElementById('faq-refresh-btn');
+  if (faqBtn) faqBtn.classList.add('spinning');
   await Promise.all([loadStats(), loadAllBadges()]);
   await loadTable();
-  setTimeout(() => btn.classList.remove('spinning'), 500);
+  setTimeout(() => {
+    if (btn) btn.classList.remove('spinning');
+    if (faqBtn) faqBtn.classList.remove('spinning');
+  }, 500);
 }
 
 function setupFilters() {
@@ -160,6 +182,7 @@ function applyFilters() {
     if (!f) return true;
     if (currentTable==='users') { if (f==='admin') return row.is_admin; if (f==='user') return !row.is_admin; }
     if (currentTable==='faq-feedback' && f==='complaint') return !!(row.complaint && row.complaint.trim());
+    if (currentTable==='faq-feedback' && (f==='liked' || f==='disliked')) return row.vote === f;
     return str.includes(f);
   });
   document.getElementById('count-badge').textContent = `${filteredData.length} record${filteredData.length!==1?'s':''}`;
@@ -338,6 +361,24 @@ function closeModal() { document.getElementById('modal-bg').classList.remove('op
 
 async function confirmDelete() {
   if (!pendingDelete) return;
+
+  if (pendingDelete.table === 'manage-faqs') {
+    closeModal();
+    const res = await fetch(`/admin/faqs/${pendingDelete.id}`, {
+      method: 'DELETE',
+      headers: HEADERS.Authorization()
+    });
+    pendingDelete = null;
+    if (res && res.ok) {
+      showToast('✓ FAQ deleted', 'success');
+      await loadManageFaqs();
+      loadAllBadges();
+    } else {
+      showToast('✕ Failed to delete FAQ', 'error');
+    }
+    return;
+  }
+
   const {table, id} = pendingDelete; closeModal();
   const urlMap = { users:`/admin/users/${id}`, detections:`/admin/detections/${id}`, feedback:`/admin/feedback/${id}`, 'faq-feedback':`/admin/faq-feedback/${id}` };
   const res = await fetch(urlMap[table], { method:'DELETE', headers:HEADERS.Authorization() });
@@ -364,6 +405,300 @@ function doLogout() { localStorage.clear(); window.location.href='/login'; }
 
 document.getElementById('modal-bg').addEventListener('click', e => {
   if (e.target===document.getElementById('modal-bg')) closeModal();
+});
+
+/* ══════════════════════════════════════════════════
+   FAQ MANAGEMENT — full CRUD with pagination & search
+══════════════════════════════════════════════════ */
+let faqEditId    = null;
+let allFaqs      = [];
+let filteredFaqs = [];
+let faqPage      = 1;
+const FAQ_PAGE_SIZE = 10;
+
+/* ─────────────────────────────────────────────────
+   Single source of truth for FAQ category chips.
+   Matches the exact pill style seen in image 2
+   (soft tinted background + matching border + bold text).
+   Detection now gets an indigo pill — same visual
+   weight as General (green) and Analysis (teal).
+───────────────────────────────────────────────── */
+const FAQ_CAT = {
+  general: {
+    label:  'General',
+    bg:     'rgba(34, 197, 94, 0.13)',
+    color:  '#15803d',
+    border: '1.5px solid rgba(34, 197, 94, 0.40)'
+  },
+  detection: {
+    label:  'Detection',
+    bg:     'rgba(99, 102, 241, 0.13)',
+    color:  '#4338ca',
+    border: '1.5px solid rgba(99, 102, 241, 0.40)'
+  },
+  analysis: {
+    label:  'Analysis & Insights',
+    bg:     'rgba(20, 184, 166, 0.13)',
+    color:  '#0f766e',
+    border: '1.5px solid rgba(20, 184, 166, 0.40)'
+  },
+  privacy: {
+    label:  'Privacy & Security',
+    bg:     'rgba(239, 68, 68, 0.13)',
+    color:  '#b91c1c',
+    border: '1.5px solid rgba(239, 68, 68, 0.40)'
+  }
+};
+
+function faqCatChip(category) {
+  const c = FAQ_CAT[category] || {
+    label:  category,
+    bg:     'rgba(150,150,150,0.12)',
+    color:  '#555',
+    border: '1.5px solid rgba(150,150,150,0.30)'
+  };
+  return `<span style="
+    display: inline-block;
+    padding: 3px 11px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    background: ${c.bg};
+    color: ${c.color};
+    border: ${c.border};
+    line-height: 1.6;
+  ">${c.label}</span>`;
+}
+
+/* ── Load FAQs from backend ── */
+async function loadManageFaqs() {
+  const data = await apiFetch('/admin/faqs');
+  if (!Array.isArray(data)) { renderFaqTable([]); return; }
+  allFaqs = data;
+  const badge = document.getElementById('badge-manage-faqs');
+  if (badge) badge.textContent = data.length;
+  applyFaqFilters();
+}
+
+/* ── FAQ search filtering ── */
+function applyFaqFilters() {
+  const q = (document.getElementById('faq-search-input')?.value || '').trim().toLowerCase();
+
+  const categoryAliases = {
+    'general':               'general',
+    'detection':             'detection',
+    'analysis':              'analysis',
+    'analysis & insights':   'analysis',
+    'analysis and insights': 'analysis',
+    'insights':              'analysis',
+    'privacy':               'privacy',
+    'privacy & security':    'privacy',
+    'privacy and security':  'privacy',
+    'security':              'privacy',
+  };
+
+  if (!q) {
+    filteredFaqs = [...allFaqs];
+  } else {
+    const matchedAlias = Object.keys(categoryAliases).find(alias => alias.startsWith(q) || alias === q);
+    if (matchedAlias) {
+      const targetKey = categoryAliases[matchedAlias];
+      filteredFaqs = allFaqs.filter(f => f.category === targetKey);
+    } else {
+      filteredFaqs = allFaqs.filter(f => {
+        const question = (f.question || '').toLowerCase();
+        const answer   = (f.answer   || '').toLowerCase();
+        return question.includes(q) || answer.includes(q);
+      });
+    }
+  }
+
+  faqPage = 1;
+  const badge = document.getElementById('faq-count-badge');
+  if (badge) badge.textContent = filteredFaqs.length ? `${filteredFaqs.length} record${filteredFaqs.length!==1?'s':''}` : '';
+  renderFaqTable(filteredFaqs);
+  renderFaqPagination();
+}
+
+/* ── Render the FAQ management panel ── */
+function renderFaqTable(faqs) {
+  const head = document.getElementById('table-head');
+  const body = document.getElementById('table-body');
+
+  head.innerHTML = `<tr>
+    <th style="width:50px">#</th>
+    <th style="width:160px">Category</th>
+    <th>Question</th>
+    <th>Answer</th>
+    <th style="width:140px">Created</th>
+    <th style="width:100px">Actions</th>
+  </tr>`;
+
+  if (!faqs.length) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text2)">No FAQs found.</td></tr>';
+    return;
+  }
+
+  const slice = faqs.slice((faqPage-1)*FAQ_PAGE_SIZE, faqPage*FAQ_PAGE_SIZE);
+  const base  = (faqPage-1)*FAQ_PAGE_SIZE + 1;
+
+  body.innerHTML = slice.map((f, i) => `
+    <tr>
+      <td style="color:var(--text2);font-size:12px">${base+i}</td>
+      <td>${faqCatChip(f.category)}</td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(f.question)}">${escHtml(f.question)}</td>
+      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);font-size:12px" title="${escHtml(f.answer)}">${escHtml(f.answer)}</td>
+      <td style="color:var(--text2);font-size:12px">${f.created_at ? new Date(f.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'}</td>
+      <td style="display:flex;gap:6px;align-items:center">
+        <button class="del-btn" title="Edit"
+          style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer"
+          onclick="openEditFaq(${f.id})">Edit</button>
+        <button class="del-btn" title="Delete" onclick="askDeleteFaq(${f.id},'${escHtml(f.question).replace(/'/g,"\\'")}')">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </td>
+    </tr>`).join('');
+}
+
+/* ── FAQ Pagination ── */
+function renderFaqPagination() {
+  const pg = document.getElementById('pagination');
+  const total = Math.max(1, Math.ceil(filteredFaqs.length / FAQ_PAGE_SIZE));
+  if (filteredFaqs.length === 0) { pg.innerHTML = ''; return; }
+  pg.innerHTML = `
+    <span class="page-info">${filteredFaqs.length} record${filteredFaqs.length!==1?'s':''}</span>
+    <button class="page-btn" onclick="goFaqPage(${faqPage-1})" ${faqPage<=1?'disabled':''}>←</button>
+    <span style="font-size:12px;color:var(--text2);padding:0 6px;font-weight:600">${faqPage} / ${total}</span>
+    <button class="page-btn" onclick="goFaqPage(${faqPage+1})" ${faqPage>=total?'disabled':''}>→</button>`;
+}
+
+function goFaqPage(p) {
+  const total = Math.ceil(filteredFaqs.length / FAQ_PAGE_SIZE);
+  if (p < 1 || p > total) return;
+  faqPage = p;
+  renderFaqTable(filteredFaqs);
+  renderFaqPagination();
+  document.querySelector('.panel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ── FAQ search handlers ── */
+window.onFaqSearch = function() {
+  const q = document.getElementById('faq-search-input')?.value || '';
+  const clear = document.getElementById('faq-search-clear');
+  if (clear) clear.style.display = q ? 'flex' : 'none';
+  applyFaqFilters();
+};
+
+window.clearFaqSearch = function() {
+  const fi = document.getElementById('faq-search-input');
+  if (fi) { fi.value = ''; fi.focus(); }
+  const clear = document.getElementById('faq-search-clear');
+  if (clear) clear.style.display = 'none';
+  applyFaqFilters();
+};
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── Open Add modal ── */
+function openAddFaq() {
+  faqEditId = null;
+  document.getElementById('faq-modal-title').textContent = 'Add FAQ';
+  document.getElementById('faq-form-submit-btn').textContent = 'Add FAQ';
+  document.getElementById('faq-form-q').value = '';
+  document.getElementById('faq-form-a').value = '';
+  document.getElementById('faq-form-cat').value = 'general';
+  hideFaqErr();
+  document.getElementById('faq-modal-bg').style.display = 'flex';
+}
+
+window.openAddFaqModal = openAddFaq;
+
+/* ── Open Edit modal ── */
+function openEditFaq(id) {
+  const faq = allFaqs.find(f => f.id === id);
+  if (!faq) return;
+  faqEditId = id;
+  document.getElementById('faq-modal-title').textContent = 'Edit FAQ';
+  document.getElementById('faq-form-submit-btn').textContent = 'Save Changes';
+  document.getElementById('faq-form-q').value = faq.question || '';
+  document.getElementById('faq-form-a').value = faq.answer || '';
+  document.getElementById('faq-form-cat').value = faq.category || 'general';
+  hideFaqErr();
+  document.getElementById('faq-modal-bg').style.display = 'flex';
+}
+
+function closeFaqModal() {
+  document.getElementById('faq-modal-bg').style.display = 'none';
+}
+
+function showFaqErr(msg) {
+  const el = document.getElementById('faq-form-err');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideFaqErr() {
+  const el = document.getElementById('faq-form-err');
+  el.textContent = '';
+  el.style.display = 'none';
+}
+
+/* ── Submit Add / Edit ── */
+async function submitFaqForm() {
+  const q   = document.getElementById('faq-form-q').value.trim();
+  const a   = document.getElementById('faq-form-a').value.trim();
+  const cat = document.getElementById('faq-form-cat').value;
+  if (!q) { showFaqErr('Question is required.'); document.getElementById('faq-form-q').focus(); return; }
+  if (!a) { showFaqErr('Answer is required.');   document.getElementById('faq-form-a').focus(); return; }
+  hideFaqErr();
+
+  const btn = document.getElementById('faq-form-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  let res;
+  if (faqEditId === null) {
+    res = await fetch('/admin/faqs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...HEADERS.Authorization() },
+      body: JSON.stringify({ question: q, answer: a, category: cat })
+    });
+  } else {
+    res = await fetch(`/admin/faqs/${faqEditId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...HEADERS.Authorization() },
+      body: JSON.stringify({ question: q, answer: a, category: cat })
+    });
+  }
+
+  btn.disabled = false;
+  btn.textContent = faqEditId === null ? 'Add FAQ' : 'Save Changes';
+
+  if (res && res.ok) {
+    closeFaqModal();
+    showToast(faqEditId === null ? '✓ FAQ added successfully' : '✓ FAQ updated successfully', 'success');
+    await loadManageFaqs();
+    loadAllBadges();
+  } else {
+    showFaqErr('Failed to save. Please try again.');
+  }
+}
+
+/* ── Delete FAQ ── */
+function askDeleteFaq(id, question) {
+  pendingDelete = { table: 'manage-faqs', id };
+  document.getElementById('modal-title').textContent = 'Delete FAQ';
+  document.getElementById('modal-body').textContent = `Delete "${question}"? This cannot be undone.`;
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+/* ── Close FAQ modal on background click ── */
+document.addEventListener('DOMContentLoaded', () => {
+  const bg = document.getElementById('faq-modal-bg');
+  if (bg) bg.addEventListener('click', e => { if (e.target === bg) closeFaqModal(); });
 });
 
 boot();
