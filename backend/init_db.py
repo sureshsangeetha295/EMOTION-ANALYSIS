@@ -49,10 +49,6 @@ CREATE TABLE IF NOT EXISTS users (
     is_admin          BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     last_login        TIMESTAMPTZ,
-    security_q1       TEXT,
-    security_a1       TEXT,
-    security_q2       TEXT,
-    security_a2       TEXT,
     password_reset_hash TEXT
 );
 
@@ -111,8 +107,6 @@ CREATE TABLE IF NOT EXISTS password_reset_log (
     id           BIGSERIAL    PRIMARY KEY,
     user_id      BIGINT       REFERENCES users(id) ON DELETE SET NULL,
     email        VARCHAR(254) NOT NULL,
-    security_q1  TEXT,
-    security_q2  TEXT,
     step1_at     TIMESTAMPTZ,
     step2_at     TIMESTAMPTZ,
     step2_passed BOOLEAN      NOT NULL DEFAULT FALSE,
@@ -160,10 +154,6 @@ pg_migrations = [
     "ALTER TABLE feedback     ADD COLUMN IF NOT EXISTS email     VARCHAR(254)",
     "ALTER TABLE feedback     ADD COLUMN IF NOT EXISTS rating    SMALLINT",
     "ALTER TABLE feedback     ADD COLUMN IF NOT EXISTS category  VARCHAR(60)  NOT NULL DEFAULT 'General'",
-    "ALTER TABLE users        ADD COLUMN IF NOT EXISTS security_q1          TEXT",
-    "ALTER TABLE users        ADD COLUMN IF NOT EXISTS security_a1          TEXT",
-    "ALTER TABLE users        ADD COLUMN IF NOT EXISTS security_q2          TEXT",
-    "ALTER TABLE users        ADD COLUMN IF NOT EXISTS security_a2          TEXT",
     "ALTER TABLE users        ADD COLUMN IF NOT EXISTS password_reset_hash  TEXT",
     "ALTER TABLE faq_feedback ADD COLUMN IF NOT EXISTS username  VARCHAR(80) NOT NULL DEFAULT 'Guest'",
 ]

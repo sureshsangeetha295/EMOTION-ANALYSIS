@@ -1,4 +1,13 @@
 import os
+
+RECAPTCHA_SITE_KEY   = os.getenv("RECAPTCHA_SITE_KEY",   "")
+RECAPTCHA_SECRET_KEY = os.getenv("RECAPTCHA_SECRET_KEY", "")
+GOOGLE_CLIENT_ID     = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI  = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
+SMTP_EMAIL           = os.getenv("SMTP_EMAIL", "")
+SMTP_APP_PASSWORD    = os.getenv("SMTP_APP_PASSWORD", "")
+
 os.environ["TF_USE_LEGACY_KERAS"]  = "1"
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -106,4 +115,3 @@ DB_DSN = {
 # =============================================================================
 
 EMOTION_LABELS = ["Anger", "Disgust", "Fear", "Happiness", "Neutral", "Sadness", "Surprise"]
-

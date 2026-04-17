@@ -1,65 +1,8 @@
-        "created_at":          current["created_at"],
+"created_at":          current["created_at"],
         "last_login":          current["last_login"],
         "password_reset_hash": current.get("password_reset_hash"),
     }
 
-
-@app.post("/auth/reset/verify-email")
-async def reset_verify_email(body: dict, request: Request):
-    email = body.get("email", "").strip().lower()
-    if not email: raise HTTPException(status_code=400, detail="Email is required.")
-    ip = request.client.host if request.client else None
-    con = db_conn(); cur = con.cursor()
-    try:
-        cur.execute(
-            "SELECT id, security_q1, security_q2 FROM users WHERE LOWER(email)=%s AND is_admin=FALSE",
-            (email,)
-        )
-        row = fetchone(cur)
-        if not row:
-            raise HTTPException(status_code=404, detail="No account found for that email.")
-        if not row.get("security_q1") or not row.get("security_q2"):
-            raise HTTPException(status_code=400, detail="This account has no security questions set.")
-        cur.execute(
-            "INSERT INTO password_reset_log (user_id,email,security_q1,security_q2,step1_at,ip_address) "
-            "VALUES (%s,%s,%s,%s,NOW(),%s)",
-            (row["id"], email, row["security_q1"], row["security_q2"], ip)
-        )
-        con.commit()
-        return {"q1label": row["security_q1"], "q2label": row["security_q2"]}
-    finally:
-        cur.close(); con.close()
-
-
-@app.post("/auth/reset/verify-answers")
-async def reset_verify_answers(body: dict):
-    email = body.get("email", "").strip().lower()
-    a1    = (body.get("a1") or "").strip().lower()
-    a2    = (body.get("a2") or "").strip().lower()
-    if not email or not a1 or not a2:
-        raise HTTPException(status_code=400, detail="Email and both answers are required.")
-    con = db_conn(); cur = con.cursor()
-    try:
-        cur.execute(
-            "SELECT id, security_a1, security_a2 FROM users WHERE LOWER(email)=%s AND is_admin=FALSE",
-            (email,)
-        )
-        row = fetchone(cur)
-        if not row: raise HTTPException(status_code=404, detail="Account not found.")
-        passed = (
-            a1 == (row.get("security_a1") or "").strip().lower() and
-            a2 == (row.get("security_a2") or "").strip().lower()
-        )
-        cur.execute(
-            "UPDATE password_reset_log SET step2_at=NOW(), step2_passed=%s "
-            "WHERE id=(SELECT id FROM password_reset_log WHERE user_id=%s ORDER BY step1_at DESC LIMIT 1)",
-            (passed, row["id"])
-        )
-        con.commit()
-        if not passed: raise HTTPException(status_code=400, detail="Answers do not match.")
-        return {"verified": True}
-    finally:
-        cur.close(); con.close()
 
 
 @app.post("/auth/reset/password")
@@ -300,4 +243,3 @@ async def session_stop(body: SessionStopRequest, current: dict = Depends(get_cur
 # =============================================================================
 #  /generate-insights  —  EMA + engagement x time aware
 # =============================================================================
-

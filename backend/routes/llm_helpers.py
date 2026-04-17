@@ -1,3 +1,7 @@
+import os
+import requests
+from passlib.context import CryptContext                  # type: ignore[import-untyped]
+
 # ── Research-grounded 3-tier engagement weights ──────────────────────────────
 #
 #  Tier 1  HIGH POSITIVE  (active learning state)
@@ -79,13 +83,13 @@ class SessionEngagementTracker:
        Passed to the LLM prompt for richer emotional context.
     """
 
-    def __init__(self, alpha: float = EMA_ALPHA):
-        self.alpha        = alpha
-        self.ema          = None       # None until first frame
-        self.conf_sum     = 0.0
-        self.weighted_sum = 0.0
-        self.frame_count  = 0
-        self.tone_counts  = {"positive": 0, "negative": 0, "neutral": 0}
+    def __init__(self, alpha: float = EMA_ALPHA) -> None:
+        self.alpha:        float                = alpha
+        self.ema:          Optional[float]      = None   # None until first frame
+        self.conf_sum:     float                = 0.0
+        self.weighted_sum: float                = 0.0
+        self.frame_count:  int                  = 0
+        self.tone_counts:  dict[str, int]       = {"positive": 0, "negative": 0, "neutral": 0}
 
     def update(self, emotion: str, confidence: float = 1.0) -> float:
         """Feed one detection frame. Returns updated EMA score (0.0-1.0)."""
@@ -116,7 +120,7 @@ class SessionEngagementTracker:
         return round(self.weighted_sum / self.conf_sum, 4)
 
     @property
-    def tone_percentages(self) -> dict:
+    def tone_percentages(self) -> dict[str, int]:
         total = max(1, self.frame_count)
         return {
             "positive": round(self.tone_counts["positive"] / total * 100),
@@ -124,7 +128,7 @@ class SessionEngagementTracker:
             "negative": round(self.tone_counts["negative"] / total * 100),
         }
 
-    def summary(self) -> dict:
+    def summary(self) -> dict[str, object]:
         return {
             "ema_engagement":      round(self.ema or 0.0, 4),
             "confidence_weighted": self.confidence_weighted_score,
@@ -154,9 +158,9 @@ def _parse_duration_to_minutes(duration_str: str) -> int:
     return max(1, round(total_seconds / 60))
 
 
-def _parse_emotion_pcts(emotion_summary: str) -> dict:
+def _parse_emotion_pcts(emotion_summary: str) -> dict[str, int]:
     """Parses "Happy: 45%, Neutral: 30%" -> {"Happy": 45, "Neutral": 30}."""
-    result = {}
+    result: dict[str, int] = {}
     if not emotion_summary:
         return result
     for part in emotion_summary.split(","):
@@ -172,24 +176,34 @@ def _parse_emotion_pcts(emotion_summary: str) -> dict:
     return result
 
 
-def _engagement_band(score: float) -> tuple:
+def _engagement_band(score: float) -> tuple[str, str, str]:
     """Converts engagement score (0-1 or 0-100) to (band, emoji, coaching) tuple."""
     pct = round(score) if score > 1 else round(score * 100)
     if pct >= 80:
-        return ("Excellent", "🟢",
-                "Sustain momentum — use spaced repetition and deliberate practice to lock in gains.")
+        return (
+            "Excellent", "🟢",
+            "Sustain momentum — use spaced repetition and deliberate practice to lock in gains.",
+        )
     elif pct >= 65:
-        return ("Good", "🟡",
-                "Maintain focus — try active recall every 5 minutes to deepen retention.")
+        return (
+            "Good", "🟡",
+            "Maintain focus — try active recall every 5 minutes to deepen retention.",
+        )
     elif pct >= 45:
-        return ("Moderate", "🟠",
-                "Boost engagement — add micro-breaks, use worked examples, and self-quiz frequently.")
+        return (
+            "Moderate", "🟠",
+            "Boost engagement — add micro-breaks, use worked examples, and self-quiz frequently.",
+        )
     elif pct >= 25:
-        return ("Low", "🔴",
-                "Address disengagement — switch to a fresh topic or 10-min Pomodoro sprints.")
+        return (
+            "Low", "🔴",
+            "Address disengagement — switch to a fresh topic or 10-min Pomodoro sprints.",
+        )
     else:
-        return ("Very Low", "⛔",
-                "Session fatigue detected — rest for 15 min before continuing; consider splitting content.")
+        return (
+            "Very Low", "⛔",
+            "Session fatigue detected — rest for 15 min before continuing; consider splitting content.",
+        )
 
 
 def _dominant_emotion_profile(dominant: str) -> str:
@@ -205,60 +219,72 @@ def _dominant_emotion_profile(dominant: str) -> str:
     return profiles.get(dominant, "mixed emotional state — review timeline for patterns")
 
 
-def _duration_context(total_minutes: int) -> tuple:
+def _duration_context(total_minutes: int) -> tuple[str, str, str]:
     """Returns (phase_label, duration_note, time_tip) based on session length."""
     if total_minutes < 5:
         return (
             "short warm-up session",
             f"very brief at {total_minutes} min — not enough data for deep conclusions",
-            "Next session aim for at least 15-20 min to generate reliable engagement patterns."
+            "Next session aim for at least 15-20 min to generate reliable engagement patterns.",
         )
     elif total_minutes <= 15:
         return (
             "short focused session",
             f"compact {total_minutes}-min window — good for single-topic bursts",
-            "Try extending to 20-25 min next time to build on this focus."
+            "Try extending to 20-25 min next time to build on this focus.",
         )
     elif total_minutes <= 25:
         return (
             "standard learning session",
             f"solid {total_minutes}-min window — enough data for reliable trends",
-            "This length is optimal; maintain it and compare trends across sessions."
+            "This length is optimal; maintain it and compare trends across sessions.",
         )
     elif total_minutes <= 45:
         return (
             "extended learning session",
             f"long session at {total_minutes} min — fatigue risk begins around the 30-min mark",
-            "Consider splitting into 25-min blocks with 5-min active breaks next time."
+            "Consider splitting into 25-min blocks with 5-min active breaks next time.",
         )
     else:
         return (
             "marathon deep-work session",
             f"very long at {total_minutes} min — significant fatigue risk",
-            "Split future sessions into 3-4 focused 15-min chunks with breaks to protect engagement."
+            "Split future sessions into 3-4 focused 15-min chunks with breaks to protect engagement.",
         )
 
 
 def _engagement_time_interpretation(eng_pct: int, total_minutes: int) -> str:
     """Single plain-English sentence combining engagement % and session duration."""
     if eng_pct >= 70 and total_minutes >= 20:
-        return (f"Strong sustained focus — {eng_pct}% EMA engagement held over {total_minutes} min "
-                f"indicates deep learning mode.")
+        return (
+            f"Strong sustained focus — {eng_pct}% EMA engagement held over {total_minutes} min "
+            f"indicates deep learning mode."
+        )
     elif eng_pct >= 70 and total_minutes < 20:
-        return (f"Good short-burst engagement — {eng_pct}% is solid but the session was brief "
-                f"({total_minutes} min); hard to confirm if this focus would sustain longer.")
+        return (
+            f"Good short-burst engagement — {eng_pct}% is solid but the session was brief "
+            f"({total_minutes} min); hard to confirm if this focus would sustain longer."
+        )
     elif eng_pct >= 50 and total_minutes >= 20:
-        return (f"Moderate sustained engagement — {eng_pct}% over {total_minutes} min shows "
-                f"attention was present but inconsistent; clear room to improve.")
+        return (
+            f"Moderate sustained engagement — {eng_pct}% over {total_minutes} min shows "
+            f"attention was present but inconsistent; clear room to improve."
+        )
     elif eng_pct >= 50 and total_minutes < 20:
-        return (f"Adequate engagement ({eng_pct}%) for a short {total_minutes}-min session; "
-                f"not enough data yet to identify a trend.")
+        return (
+            f"Adequate engagement ({eng_pct}%) for a short {total_minutes}-min session; "
+            f"not enough data yet to identify a trend."
+        )
     elif eng_pct >= 30 and total_minutes >= 20:
-        return (f"Concerning pattern — only {eng_pct}% EMA engagement across {total_minutes} min "
-                f"suggests significant disengagement for extended periods.")
+        return (
+            f"Concerning pattern — only {eng_pct}% EMA engagement across {total_minutes} min "
+            f"suggests significant disengagement for extended periods."
+        )
     else:
-        return (f"Low engagement ({eng_pct}%) in a {total_minutes}-min session signals "
-                f"early disengagement or fatigue; intervention is recommended.")
+        return (
+            f"Low engagement ({eng_pct}%) in a {total_minutes}-min session signals "
+            f"early disengagement or fatigue; intervention is recommended."
+        )
 
 
 # =============================================================================
@@ -324,7 +350,10 @@ def generate_summary(session_data: dict) -> str:
         f"EMA Engagement   : {eng_pct}% — {eng_read}\n"
         f"Engagement Band  : {band} {emoji}\n"
         f"Dominant Emotion : {dominant} ({dom_profile})\n"
-        + (f"Tone Breakdown   : {pos_pct}% positive / {neu_pct}% neutral / {neg_pct}% negative\n" if tone else "")
+        + (
+            f"Tone Breakdown   : {pos_pct}% positive / {neu_pct}% neutral / {neg_pct}% negative\n"
+            if tone else ""
+        )
         + f"\nCoaching direction: {coaching}\n\n"
         "Write the chat-style message now. Remember: no headers, no timestamps, no sections, under 80 words."
     )
@@ -358,8 +387,11 @@ def generate_summary(session_data: dict) -> str:
 
 
 # =============================================================================
-#  PASSWORD
+#  PASSWORD HASHING
 # =============================================================================
 
 pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
+# Add type alias so callers can import it if needed
+from typing import Optional  # noqa: E402  (re-export for mypy)

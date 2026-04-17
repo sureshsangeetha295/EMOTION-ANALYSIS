@@ -20,18 +20,10 @@ def init_db():
             is_admin            BOOLEAN      NOT NULL DEFAULT FALSE,
             created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
             last_login          TIMESTAMPTZ,
-            security_q1         TEXT,
-            security_a1         TEXT,
-            security_q2         TEXT,
-            security_a2         TEXT,
             password_reset_hash TEXT
         )
     """)
     for _col_sql in [
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS security_q1         TEXT",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS security_a1         TEXT",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS security_q2         TEXT",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS security_a2         TEXT",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_hash TEXT",
     ]:
         try:
@@ -103,8 +95,6 @@ def init_db():
             id           BIGSERIAL    PRIMARY KEY,
             user_id      BIGINT       REFERENCES users(id) ON DELETE SET NULL,
             email        VARCHAR(254) NOT NULL,
-            security_q1  TEXT,
-            security_q2  TEXT,
             step1_at     TIMESTAMPTZ,
             step2_at     TIMESTAMPTZ,
             step2_passed BOOLEAN      NOT NULL DEFAULT FALSE,
@@ -152,4 +142,3 @@ def init_db():
 
     con.commit(); cur.close(); con.close()
     print("[EmotionAI] Database initialised")
-
