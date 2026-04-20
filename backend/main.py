@@ -34,7 +34,7 @@ from jose import JWTError, jwt
 import sys as _sys
 import os as _os
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
-from mock_routes import router as mock_router  # type: ignore[import-untyped]
+
 
 
 # =============================================================================
@@ -163,13 +163,27 @@ class SessionEngagementTracker:
         self.frame_count  = 0
         self.tone_counts  = {"positive": 0, "negative": 0, "neutral": 0}
 
+    def _adaptive_alpha(self, score: float, confidence: float) -> float:
+        """
+        Alpha adapts based on:
+          1. Confidence: high-confidence detections react faster (higher alpha)
+          2. Emotion intensity: strong emotions move the EMA more;
+             neutral/low-intensity emotions smooth more (lower alpha)
+        Range: 0.08 (low conf + neutral) → 0.30 (high conf + strong emotion)
+        """
+        conf_norm = max(0.0, min(1.0, confidence))
+        intensity = abs(score - 0.50) / 0.50   # 0 = neutral midpoint, 1 = extreme
+        alpha = 0.08 + (conf_norm * 0.12) + (intensity * 0.10)
+        return min(0.30, alpha)
+
     def update(self, emotion: str, confidence: float = 1.0) -> float:
         score = emotion_to_engagement(emotion)
         conf  = max(0.0, min(1.0, float(confidence)))
         if self.ema is None:
             self.ema = score
         else:
-            self.ema = self.alpha * score + (1.0 - self.alpha) * self.ema
+            alpha = self._adaptive_alpha(score, conf)
+            self.ema = alpha * score + (1.0 - alpha) * self.ema
         self.weighted_sum += score * conf
         self.conf_sum     += conf
         self.frame_count  += 1
@@ -199,6 +213,68 @@ class SessionEngagementTracker:
             "frame_count":         self.frame_count,
             "tone":                self.tone_percentages,
         }
+
+
+# =============================================================================
+#  SPIKE DETECTOR  — detects sudden engagement drops/surges
+# =============================================================================
+
+class SpikeDetector:
+    """
+    Detects sudden engagement spikes (sharp drops or surges) using a
+    rolling z-score over a short window of EMA scores.
+    A 'spike' = the EMA moves more than `threshold` standard deviations
+    from the recent rolling mean in a single step.
+    """
+
+    def __init__(self, window: int = 10, threshold: float = 1.8):
+        self.window    = window
+        self.threshold = threshold
+        self._history: list[float] = []   # raw EMA values
+        self._spikes:  list[dict]  = []   # {frame, direction, delta, ema}
+        self._frame    = 0
+
+    def update(self, ema_score: float) -> dict | None:
+        """
+        Feed the latest EMA score. Returns a spike dict if one is detected,
+        else None.
+        spike dict: {frame, direction ('drop'|'surge'), delta, ema}
+        """
+        self._frame += 1
+        spike = None
+        if len(self._history) >= 2:
+            window_vals = self._history[-self.window:]
+            mean = sum(window_vals) / len(window_vals)
+            std  = (sum((v - mean) ** 2 for v in window_vals) / len(window_vals)) ** 0.5
+            if std > 0.01:
+                z = (ema_score - mean) / std
+                if abs(z) >= self.threshold:
+                    direction = "drop" if ema_score < mean else "surge"
+                    spike = {
+                        "frame":     self._frame,
+                        "direction": direction,
+                        "delta":     round(abs(ema_score - mean), 4),
+                        "ema":       round(ema_score, 4),
+                    }
+                    self._spikes.append(spike)
+        self._history.append(ema_score)
+        return spike
+
+    def summary(self) -> dict:
+        drops  = [s for s in self._spikes if s["direction"] == "drop"]
+        surges = [s for s in self._spikes if s["direction"] == "surge"]
+        return {
+            "total_spikes":  len(self._spikes),
+            "drops":         len(drops),
+            "surges":        len(surges),
+            "spike_frames":  [s["frame"] for s in self._spikes],
+            "spike_details": self._spikes,
+        }
+
+    def reset(self):
+        self._history.clear()
+        self._spikes.clear()
+        self._frame = 0
 
 
 # =============================================================================
@@ -355,34 +431,37 @@ def generate_summary(session_data: dict) -> str:
         eng_read = f"very low at {eng_pct}% — significant disengagement detected"
 
     system_msg = (
-        "You are EmotionAI, a friendly and direct learning coach. "
-        "You just finished watching a learner's live session through their webcam. "
-        "You detected their facial emotions frame by frame and computed an EMA engagement score — "
-        "a recency-weighted score where recent frames matter more than older ones. "
-        "It reflects WHERE the learner ended up, not just a flat average.\n\n"
-        "Write a short, warm, CHAT-STYLE message directly to the learner — like a coach texting "
-        "feedback after a session. No headers. No bullet points. No sections. No timestamps. "
-        "No references to session duration or time. Just 3-4 natural sentences.\n\n"
-        "Structure (write as flowing prose, NOT labelled):\n"
-        "  1. One honest sentence about how engaged they were (use the EMA score naturally).\n"
-        "  2. One sentence about what their dominant emotion says about them right now.\n"
-        "  3. One concrete, specific action they can take before their next session.\n"
-        "  4. One short encouraging closer.\n\n"
-        "Rules:\n"
-        "- Never mention timestamps, duration, minutes, or seconds.\n"
-        "- Never say 'session data', 'timeline', 'refer to', or 'see details'.\n"
-        "- Never use headers like SESSION SNAPSHOT or COACH TIP.\n"
-        "- Write like a real human coach, not a report generator.\n"
-        "- Keep it under 80 words total."
+        "You are EmotionAI, a warm and encouraging learning coach. "
+        "You just analysed a learner's webcam session by reading their facial expressions frame by frame. "
+        "Your job is to turn that data into a short, friendly chat message — like a supportive friend "
+        "giving honest feedback after a study session.\n\n"
+        "WHAT THE DATA MEANS (explain naturally, never use jargon):\n"
+        "- EMA Engagement score: think of it as a focus meter from 0–100. "
+        "  Above 65 = good focus, 45–64 = some wandering, below 45 = mind was elsewhere.\n"
+        "- Dominant emotion: the face you showed most during the session. "
+        "  Neutral = calm but passive. Happy/Surprised = actively interested. "
+        "  Sad/Angry/Fear/Disgust = something was frustrating or hard.\n\n"
+        "Write exactly 3–4 sentences in a warm, conversational tone. No bullet points. No headers. "
+        "No technical words like 'EMA', 'recency-weighted', or 'frame'. "
+        "Speak directly to the learner as 'you'. Be honest but kind.\n\n"
+        "Sentence 1: Tell them simply how focused they were — use plain language, not a score.\n"
+        "Sentence 2: Tell them what their main emotion during the session suggests — make it human and relatable.\n"
+        "Sentence 3: Give ONE specific, practical thing they can do differently or repeat next time.\n"
+        "Sentence 4 (optional): A short, genuine encouragement — not generic cheerleading.\n\n"
+        "Hard rules:\n"
+        "- Never say 'EMA', 'timeline', 'session data', 'refer to', 'timestamps', or 'minutes'.\n"
+        "- Never use headers or bullet points.\n"
+        "- Keep it under 85 words total.\n"
+        "- Sound like a real person, not a report."
     )
 
     user_msg = (
-        f"EMA Engagement   : {eng_pct}% — {eng_read}\n"
-        f"Engagement Band  : {band} {emoji}\n"
-        f"Dominant Emotion : {dominant} ({dom_profile})\n"
-        + (f"Tone Breakdown   : {pos_pct}% positive / {neu_pct}% neutral / {neg_pct}% negative\n" if tone else "")
-        + f"\nCoaching direction: {coaching}\n\n"
-        "Write the chat-style message now. Remember: no headers, no timestamps, no sections, under 80 words."
+        f"Focus level      : {eng_pct}/100 — {eng_read}\n"
+        f"Focus rating     : {band} {emoji}\n"
+        f"Main emotion     : {dominant} — means: {dom_profile}\n"
+        + (f"Mood breakdown   : {pos_pct}% positive / {neu_pct}% neutral / {neg_pct}% negative\n" if tone else "")
+        + f"\nCoach suggestion : {coaching}\n\n"
+        "Write the friendly chat message now. Plain English only, under 85 words, no jargon, no headers."
     )
 
     url     = "https://api.groq.com/openai/v1/chat/completions"
@@ -499,7 +578,7 @@ def fetchall(cur) -> list:
 
 
 def init_db():
-    """Create all tables (including mock_sessions) and sync admin account from .env."""
+    """Create all tables and sync admin account from .env."""
     con = db_conn(); cur = con.cursor()
 
     cur.execute("""
@@ -626,54 +705,6 @@ def init_db():
     cur.execute("CREATE INDEX IF NOT EXISTS idx_faqs_category ON faqs(category)")
     con.commit()
 
-    # ── MockCoach sessions table ──────────────────────────────────────────────
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS mock_sessions (
-            id                BIGSERIAL    PRIMARY KEY,
-            session_id        TEXT         NOT NULL UNIQUE,
-            user_id           BIGINT       REFERENCES users(id) ON DELETE SET NULL,
-            mode              VARCHAR(30)  NOT NULL DEFAULT 'presentation',
-            topic             TEXT,
-            transcript        TEXT,
-            duration_s        REAL         DEFAULT 0,
-            -- Voice metrics (Librosa)
-            speaking_rate_wpm REAL         DEFAULT 0,
-            pitch_mean_hz     REAL         DEFAULT 0,
-            pitch_std_hz      REAL         DEFAULT 0,
-            energy_mean       REAL         DEFAULT 0,
-            silence_ratio     REAL         DEFAULT 0,
-            pause_count       INT          DEFAULT 0,
-            avg_pause_s       REAL         DEFAULT 0,
-            -- Voice scores (0-100)
-            score_pace        INT          DEFAULT 0,
-            score_pitch       INT          DEFAULT 0,
-            score_volume      INT          DEFAULT 0,
-            score_pauses      INT          DEFAULT 0,
-            score_clarity     INT          DEFAULT 0,
-            -- Emotion (from facial model)
-            engagement_pct    INT          DEFAULT 0,
-            dominant_emotion  VARCHAR(30)  DEFAULT 'Neutral',
-            positive_pct      INT          DEFAULT 0,
-            neutral_pct       INT          DEFAULT 0,
-            negative_pct      INT          DEFAULT 0,
-            -- LLM outputs
-            overall_score     INT          DEFAULT 0,
-            dimension_scores  JSONB,
-            feedback          JSONB,
-            strengths         JSONB,
-            tips              JSONB,
-            coach_summary     TEXT,
-            overall_verdict   TEXT,
-            report_html       TEXT,
-            created_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW()
-        )
-    """)
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_mock_user    ON mock_sessions(user_id)")
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_mock_mode    ON mock_sessions(mode)")
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_mock_created ON mock_sessions(created_at)")
-    con.commit()
-    print("[EmotionAI] mock_sessions table ready.")
-
     # ── Admin account sync ────────────────────────────────────────────────────
     admin_email_clean = ADMIN_EMAIL.strip().lower()
     cur.execute(
@@ -725,9 +756,6 @@ app = FastAPI(title="EmotionAI", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
-
-# ── Register MockCoach routes under /mock ─────────────────────────────────────
-app.include_router(mock_router)
 
 
 # =============================================================================
@@ -801,6 +829,12 @@ class InsightsRequest(BaseModel):
     engagement_score:      float
     reactions_sent:        int
     tone:                  Optional[dict] = None
+    timeline_context:      Optional[str]  = None
+    positive_pct:          Optional[int]  = None
+    negative_pct:          Optional[int]  = None
+    neutral_pct:           Optional[int]  = None
+    spike_summary:         Optional[dict] = None   # {total_spikes, drops, surges, spike_frames}
+    instructions:          Optional[str]  = None
 
 class AdminCreateUserRequest(BaseModel):
     username: str
@@ -1294,7 +1328,9 @@ async def otp_reset_password(body: OtpResetBody):
 #  EMOTION DETECTION
 # =============================================================================
 
-_active_sessions: dict[int, str] = {}
+_active_sessions:       dict[int, str]          = {}
+_session_ema_trackers:  dict[str, SessionEngagementTracker] = {}  # sid → EMA tracker
+_session_spike_detectors: dict[str, SpikeDetector]          = {}  # sid → spike detector
 
 
 @app.post("/predict/")
@@ -1320,9 +1356,28 @@ async def predict(
             sid = _active_sessions[uid]
         else:
             sid = str(uuid.uuid4()); _active_sessions[uid] = sid
+
+        # ── Per-session EMA + spike tracking ──────────────────────────────
+        if sid not in _session_ema_trackers:
+            _session_ema_trackers[sid]    = SessionEngagementTracker()
+            _session_spike_detectors[sid] = SpikeDetector(window=10, threshold=1.8)
+
+        tracker  = _session_ema_trackers[sid]
+        detector = _session_spike_detectors[sid]
+        ema_now  = tracker.update(result["emotion"], result.get("confidence", 1.0))
+        spike    = detector.update(ema_now)
+
         if save:
             _save_detection(uid, sid, result, source="webcam")
-        return {**result, "session_id": sid, "user_id": uid}
+
+        return {
+            **result,
+            "session_id":  sid,
+            "user_id":     uid,
+            "ema":         round(ema_now, 4),
+            "spike":       spike,                  # None or {frame, direction, delta, ema}
+            "spike_count": len(detector._spikes),
+        }
     except Exception as exc:
         print(f"[EmotionAI] /predict error: {exc}")
         return JSONResponse(status_code=500, content={"error": "server_error", "message": str(exc)})
@@ -1557,32 +1612,66 @@ async def generate_insights(body: InsightsRequest, current: dict = Depends(get_c
         action_hint = coaching
 
     system_msg = (
-        "You are EmotionAI, a direct and friendly learning coach. "
-        "You generate exactly 3 insight cards based on a learner's EMA engagement score and emotion data. "
-        "Each card has a short title (3-5 words) and a 1-sentence description.\n\n"
+        "You are EmotionAI, a friendly learning coach writing short insight cards for a non-technical user. "
+        "The user has just finished a webcam learning session. Their facial expressions were tracked to measure "
+        "focus and emotion. You must turn that data into 3 clear, plain-English insight cards.\n\n"
+        "WHAT THE NUMBERS MEAN — always translate these into simple language:\n"
+        "- Focus score (EMA): 0–100 scale. 65+ = good focus, 45–64 = some distraction, below 45 = mostly disengaged.\n"
+        "- Positive emotions (Happy, Surprised) = curious, interested, enjoying the content.\n"
+        "- Negative emotions (Angry, Sad, Fear, Disgust) = frustrated, confused, or overwhelmed.\n"
+        "- Neutral = calm but not very emotionally activated — passively listening.\n"
+        "- Engagement spikes/drops = moments where focus suddenly jumped or fell.\n\n"
+        "CARD RULES:\n"
+        "Card 1 — FOCUS READING: Explain in one simple sentence what the focus score means for this learner. "
+        "Do NOT say 'EMA'. Say things like 'your focus was...' or 'your attention stayed...'.\n"
+        "Card 2 — EMOTION SIGNAL: In one sentence, explain what their main emotion during the session suggests. "
+        "If there were engagement drops, mention they happened naturally (no timestamps).\n"
+        "Card 3 — WHAT TO DO NEXT: One specific, actionable suggestion. Use everyday language. "
+        "Not generic advice — make it feel personal based on their actual numbers.\n\n"
         "STRICT RULES:\n"
-        "1. NEVER mention timestamps, minutes, seconds, session duration, or time.\n"
-        "2. NEVER say 'see timeline', 'check session data', 'at X:XX', or 'refer to'.\n"
-        "3. Base everything ONLY on EMA engagement score and emotion percentages.\n"
-        "4. The EMA score is recency-weighted — the final score reflects how the learner ENDED, "
-        "   not just a flat average. A high EMA means they finished strong.\n"
-        "5. Be direct and specific. Mention the actual % numbers.\n"
+        "1. NEVER say 'EMA', 'recency-weighted', 'z-score', 'frame', or any technical term.\n"
+        "2. NEVER mention timestamps, minutes, seconds, or session duration.\n"
+        "3. NEVER say 'see session data', 'check the timeline', or 'refer to'.\n"
+        "4. Use the actual percentage numbers naturally in sentences.\n"
+        "5. Write each card title as 3–5 plain words (no jargon).\n"
         "6. Return ONLY valid JSON. No markdown, no code fences, no preamble.\n\n"
         'Output format: {"insights":[{"title":"...","desc":"..."},{"title":"...","desc":"..."},{"title":"...","desc":"..."}]}'
     )
 
+    # Spike context for prompt
+    _sp        = body.spike_summary or {}
+    _sp_total  = _sp.get("total_spikes", 0)
+    _sp_drops  = _sp.get("drops", 0)
+    _sp_surges = _sp.get("surges", 0)
+    if _sp_total == 0:
+        spike_line = "Attention pattern: steady throughout — no sudden focus changes detected\n"
+    elif _sp_drops >= _sp_surges:
+        spike_line = (
+            f"Attention pattern: {_sp_total} sudden focus change(s) detected "
+            f"({_sp_drops} drop(s), {_sp_surges} recovery(ies)) — "
+            f"learner lost focus sharply {_sp_drops} time(s)\n"
+        )
+    else:
+        spike_line = (
+            f"Attention pattern: {_sp_total} sudden focus change(s) detected "
+            f"({_sp_drops} drop(s), {_sp_surges} re-engagement burst(s)) — "
+            f"learner re-engaged strongly {_sp_surges} time(s)\n"
+        )
+
     user_msg = (
-        f"EMA Engagement  : {eng_pct}% — {eng_verdict}\n"
-        f"Engagement Band : {band} {emoji}\n"
-        f"Dominant Emotion: {dominant} ({dom_profile})\n"
-        f"Emotion Tone    : {pos_pct}% positive / {neu_pct}% neutral / {neg_pct}% negative\n"
-        f"Emotional State : {emotional_context}\n"
-        f"Full Distribution: {body.emotion_summary or 'N/A'}\n\n"
-        "Generate 3 insight cards:\n"
-        f"Card 1 — EMA READING: What does {eng_pct}% EMA engagement actually mean for this learner right now?\n"
-        f"Card 2 — EMOTION SIGNAL: What does {dominant} as dominant emotion ({dom_profile}) reveal?\n"
-        f"Card 3 — ACTION: One specific, real-world action. Hint: {action_hint}\n\n"
-        "No timestamps. No time references. Numbers only from the data above. Return JSON only."
+        f"Focus score     : {eng_pct}/100 — {eng_verdict}\n"
+        f"Focus level     : {band} {emoji}\n"
+        f"Main emotion    : {dominant} — what it means: {dom_profile}\n"
+        f"Mood breakdown  : {pos_pct}% positive / {neu_pct}% neutral / {neg_pct}% negative\n"
+        f"Emotional state : {emotional_context}\n"
+        f"{spike_line}"
+        f"All emotions    : {body.emotion_summary or 'N/A'}\n\n"
+        "Now write the 3 insight cards in plain English:\n"
+        f"Card 1 — FOCUS READING: What does a {eng_pct}/100 focus score actually mean for this learner in simple terms?\n"
+        f"Card 2 — EMOTION SIGNAL: What does '{dominant}' as their main emotion tell us?"
+        + (f" Note: there were {_sp_total} sudden attention change(s) during the session." if _sp_total > 0 else "") + "\n"
+        f"Card 3 — WHAT TO DO NEXT: One specific, personal suggestion. Base it on: {action_hint}\n\n"
+        "No timestamps. No jargon. Use the actual numbers. Return JSON only."
     )
 
     url     = "https://api.groq.com/openai/v1/chat/completions"
@@ -2196,12 +2285,6 @@ async def detect_page():
 @app.get("/livecam.html")
 async def livecam_page():
     return FileResponse(os.path.join(FRONTEND_DIR, "livecam.html"))
-
-# ── MockCoach page route ──────────────────────────────────────────────────────
-@app.get("/mock")
-@app.get("/mock.html")
-async def mock_page():
-    return FileResponse(os.path.join(FRONTEND_DIR, "mock.html"))
 
 @app.get("/logout")
 async def logout():

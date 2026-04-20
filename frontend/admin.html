@@ -7,6 +7,7 @@
 <title>Emotion Analysis — Admin Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="style/pages/admin.css"/>
+<script src="script/network-alert.js" defer></script>
 </head>
 <body>
 
@@ -189,33 +190,36 @@
 
 <!-- FAQ Add / Edit Modal -->
 <div class="modal-bg" id="faq-modal-bg" style="display:none;">
-  <div class="modal" style="max-width:540px;width:90%">
-    <h3 id="faq-modal-title">Add FAQ</h3>
-    <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px;">
-      <div>
-        <label style="font-size:12px;color:var(--text2);font-weight:600;display:block;margin-bottom:4px;">Category</label>
-        <select id="faq-form-cat" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--elevated);color:var(--text1);font-size:13px;">
+  <div class="modal faq-modal">
+    <div class="faq-modal-header">
+      <div class="faq-modal-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <h3 id="faq-modal-title">Add FAQ</h3>
+    </div>
+    <div class="faq-modal-body">
+      <div class="faq-field">
+        <label class="faq-label">Category</label>
+        <select id="faq-form-cat" class="faq-input">
           <option value="general">General</option>
           <option value="detection">Detection</option>
           <option value="analysis">Analysis &amp; Insights</option>
           <option value="privacy">Privacy &amp; Security</option>
         </select>
       </div>
-      <div>
-        <label style="font-size:12px;color:var(--text2);font-weight:600;display:block;margin-bottom:4px;">Question</label>
-        <input id="faq-form-q" type="text" placeholder="Enter the FAQ question…"
-          style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--elevated);color:var(--text1);font-size:13px;box-sizing:border-box;"/>
+      <div class="faq-field">
+        <label class="faq-label">Question</label>
+        <input id="faq-form-q" type="text" placeholder="Enter the FAQ question…" class="faq-input"/>
       </div>
-      <div>
-        <label style="font-size:12px;color:var(--text2);font-weight:600;display:block;margin-bottom:4px;">Answer</label>
-        <textarea id="faq-form-a" rows="5" placeholder="Enter the FAQ answer…"
-          style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--elevated);color:var(--text1);font-size:13px;resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>
+      <div class="faq-field">
+        <label class="faq-label">Answer</label>
+        <textarea id="faq-form-a" rows="5" placeholder="Enter the FAQ answer…" class="faq-input faq-textarea"></textarea>
       </div>
-      <div id="faq-form-err" style="color:#ef4444;font-size:12px;display:none;"></div>
+      <div id="faq-form-err" class="faq-err"></div>
     </div>
-    <div class="modal-btns" style="margin-top:18px;">
+    <div class="modal-btns faq-modal-btns">
       <button class="modal-cancel" onclick="closeFaqModal()">Cancel</button>
-      <button class="modal-confirm" id="faq-form-submit-btn" onclick="submitFaqForm()">Add FAQ</button>
+      <button class="modal-confirm faq-submit-btn" id="faq-form-submit-btn" onclick="submitFaqForm()">Add FAQ</button>
     </div>
   </div>
 </div>

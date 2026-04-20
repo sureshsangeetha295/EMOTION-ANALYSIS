@@ -1,6 +1,6 @@
 // ── Trend graph ──
-function updateTrendGraph(probs){
-  TREND_HISTORY.push({t:Date.now(),probs:{...probs}});
+function updateTrendGraph(probs, spikeAtFrame){
+  TREND_HISTORY.push({t:Date.now(),probs:{...probs},isSpike:!!spikeAtFrame});
   const canvas=document.getElementById('distTrendCanvas');
   if(!canvas)return;
   const dpr=window.devicePixelRatio||1;
@@ -14,7 +14,7 @@ function updateTrendGraph(probs){
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
   if(TREND_HISTORY.length<2)return;
-  const pad={l:6,r:6,t:6,b:6};
+  const pad={l:6,r:6,t:14,b:6};  // extra top padding for spike markers
   const gW=W-pad.l-pad.r,gH=H-pad.t-pad.b;
   const total=TREND_HISTORY.length;
   PROB_KEYS.forEach(key=>{
@@ -31,6 +31,22 @@ function updateTrendGraph(probs){
     const ly=pad.t+gH-(((last.probs[key]||0)/100)*gH);
     ctx.beginPath();ctx.arc(lx,ly,2.5,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
   });
+
+  // ── Draw spike markers (red ▼ triangles at the top) ──────────────────
+  TREND_HISTORY.forEach((d,i)=>{
+    if(!d.isSpike)return;
+    const x=pad.l+(i/(Math.max(total-1,1)))*gW;
+    const tip=pad.t-2;        // point of the triangle
+    const sz=5;               // half-width of base
+    ctx.beginPath();
+    ctx.moveTo(x, tip+sz*1.5);  // bottom-left
+    ctx.lineTo(x+sz, tip);      // top-right
+    ctx.lineTo(x-sz, tip);      // top-left
+    ctx.closePath();
+    ctx.fillStyle='rgba(220,38,38,0.85)';
+    ctx.fill();
+  });
+
   canvas._trendW=W;canvas._trendH=H;canvas._pad=pad;canvas._total=total;
   const isAtEnd=container.scrollLeft>=container.scrollWidth-container.clientWidth-20;
   if(isAtEnd||container.scrollLeft===0)container.scrollLeft=container.scrollWidth;

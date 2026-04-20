@@ -7,32 +7,28 @@
 <title>EmotionAI — Live Cam</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,300;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="style/pages/livecam.css"/>
+<script src="script/network-alert.js" defer></script>
 </head>
 <body>
 
 <nav>
-  <!-- Logo on far left -->
   <div class="nav-logo-wrap">
     <a href="/home" class="nav-logo">
       <div class="logo-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M7 18a5 5 0 0 1 10 0"/></svg></div>
       Emotion Analysis
     </a>
   </div>
-  <!-- Spacer pushes everything to the right -->
   <div class="nav-spacer"></div>
-  <!-- Nav links (hidden on mobile) -->
   <ul class="nav-links">
     <li><a href="/home">Home</a></li>
     <li><a href="/detect" class="active">Detect</a></li>
     <li><a href="/faq">FAQ</a></li>
     <li><a href="/feedback">Feedback</a></li>
   </ul>
-  <!-- Actions (hidden on mobile) -->
   <div class="nav-actions">
     <div id="navLiveBadge" style="display:none;align-items:center;gap:5px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;letter-spacing:0.08em;padding:3px 9px;border-radius:20px;margin-right:6px"><span style="width:6px;height:6px;background:#fff;border-radius:50%;display:inline-block"></span>LIVE</div>
     <a href="#" onclick="if(typeof Auth!=='undefined'&&Auth.logout)Auth.logout();else window.location.href='/logout'" class="btn-ghost-sm"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</a>
   </div>
-  <!-- Hamburger on far RIGHT (mobile only) -->
   <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
 </nav>
 <div class="mobile-overlay" id="mobileOverlay"></div>
@@ -56,8 +52,6 @@
     <a href="#" onclick="if(typeof Auth!=='undefined'&&Auth.logout)Auth.logout();else window.location.href='/logout'" class="btn-ghost-sm"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</a>
   </div>
 </div>
-
-
 
 <div class="page">
 
@@ -210,7 +204,10 @@
     <div class="card summary-card">
       <div class="summary-section-title">
         <span style="font-size:12.5px;font-weight:700;color:var(--text)">Session summary</span>
-        <span class="summary-session-chip" id="sessionChipLabel">Session #—</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div id="spikeCounterBadge" style="display:none;align-items:center;gap:4px;background:rgba(220,38,38,0.1);color:#dc2626;font-size:10px;font-weight:700;letter-spacing:0.05em;padding:3px 8px;border-radius:20px;border:1px solid rgba(220,38,38,0.25)"></div>
+          <span class="summary-session-chip" id="sessionChipLabel">Session #—</span>
+        </div>
       </div>
       <div class="stat-tiles">
         <div class="stat-tile"><div class="stat-tile-label">Duration</div><div class="stat-tile-value" id="sumDuration">0:00</div><div class="stat-tile-sub">minutes</div></div>
@@ -242,43 +239,85 @@
       <div class="analysis-left">
         <div class="analysis-section-title">Emotion breakdown</div>
         <div class="emo-category-cards" id="emoCategoryCards">
+
+          <!-- POSITIVE -->
           <div class="emo-cat-card emo-cat-positive" id="emoCatPositive">
             <div class="emo-cat-header">
               <div class="emo-cat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
               <div class="emo-cat-title">Positive</div>
               <div class="emo-cat-pct" id="emoPosTotal">—%</div>
             </div>
-            <div class="emo-cat-bar" id="emoPosBar" style="width:0%"></div>
-            <div class="emo-cat-tags" id="emoPosTags">
-              <span class="emo-tag emo-tag-happy" id="tagHappy">Happy <span class="emo-tag-pct" id="tagHappyPct">—%</span></span>
-              <span class="emo-tag emo-tag-surprised" id="tagSurprised">Surprised <span class="emo-tag-pct" id="tagSurprisedPct">—%</span></span>
+            <div class="emo-body-row">
+              <div class="emo-main-chips">
+                <div class="emo-main-chip" style="--chip-bg:rgba(245,158,11,0.13);--chip-color:#b45309">
+                  <div class="emo-main-chip-dot" style="background:#f59e0b"></div>
+                  <div class="emo-main-chip-label">Happy</div>
+                  <div class="emo-main-chip-pct" id="tagHappySubPct">—%</div>
+                </div>
+                <div class="emo-main-chip" style="--chip-bg:rgba(236,72,153,0.13);--chip-color:#be185d">
+                  <div class="emo-main-chip-dot" style="background:#ec4899"></div>
+                  <div class="emo-main-chip-label">Surprised</div>
+                  <div class="emo-main-chip-pct" id="tagSurprisedSubPct">—%</div>
+                </div>
+              </div>
+              <div class="emo-tag-list">
+                <div class="emo-tag" style="--tag-color:#b45309"><span class="emo-tag-dot" style="background:#f59e0b"></span>Happy</div>
+                <div class="emo-tag" style="--tag-color:#be185d"><span class="emo-tag-dot" style="background:#ec4899"></span>Surprised</div>
+              </div>
             </div>
           </div>
+
+          <!-- NEGATIVE -->
           <div class="emo-cat-card emo-cat-negative" id="emoCatNegative">
             <div class="emo-cat-header">
               <div class="emo-cat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
               <div class="emo-cat-title">Negative</div>
               <div class="emo-cat-pct" id="emoNegTotal">—%</div>
             </div>
-            <div class="emo-cat-bar" id="emoNegBar" style="width:0%"></div>
-            <div class="emo-cat-tags" id="emoNegTags">
-              <span class="emo-tag emo-tag-angry" id="tagAngry">Angry <span class="emo-tag-pct" id="tagAngryPct">—%</span></span>
-              <span class="emo-tag emo-tag-sad" id="tagSad">Sad <span class="emo-tag-pct" id="tagSadPct">—%</span></span>
-              <span class="emo-tag emo-tag-fearful" id="tagFear">Fear <span class="emo-tag-pct" id="tagFearPct">—%</span></span>
-              <span class="emo-tag emo-tag-disgusted" id="tagDisgust">Disgust <span class="emo-tag-pct" id="tagDisgustPct">—%</span></span>
+            <div class="emo-body-row">
+              <div class="emo-main-chips">
+                <div class="emo-main-chip" style="--chip-bg:rgba(239,68,68,0.13);--chip-color:#b91c1c">
+                  <div class="emo-main-chip-dot" style="background:#ef4444"></div>
+                  <div class="emo-main-chip-label">Angry</div>
+                  <div class="emo-main-chip-pct" id="tagAngrySubPct">—%</div>
+                </div>
+                <div class="emo-main-chip" style="--chip-bg:rgba(59,130,246,0.13);--chip-color:#1d4ed8">
+                  <div class="emo-main-chip-dot" style="background:#3b82f6"></div>
+                  <div class="emo-main-chip-label">Sad</div>
+                  <div class="emo-main-chip-pct" id="tagSadSubPct">—%</div>
+                </div>
+              </div>
+              <div class="emo-tag-list">
+                <div class="emo-tag" style="--tag-color:#b91c1c"><span class="emo-tag-dot" style="background:#ef4444"></span>Angry</div>
+                <div class="emo-tag" style="--tag-color:#1d4ed8"><span class="emo-tag-dot" style="background:#3b82f6"></span>Sad</div>
+                <div class="emo-tag" style="--tag-color:#7e22ce"><span class="emo-tag-dot" style="background:#a855f7"></span>Fear</div>
+                <div class="emo-tag" style="--tag-color:#065f46"><span class="emo-tag-dot" style="background:#10b981"></span>Disgust</div>
+              </div>
             </div>
           </div>
+
+          <!-- NEUTRAL -->
           <div class="emo-cat-card emo-cat-neutral" id="emoCatNeutral">
             <div class="emo-cat-header">
               <div class="emo-cat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
               <div class="emo-cat-title">Neutral</div>
               <div class="emo-cat-pct" id="emoNeutralTotal">—%</div>
             </div>
-            <div class="emo-cat-bar" id="emoNeuBar" style="width:0%"></div>
-            <div class="emo-cat-tags" id="emoNeutralTags">
-              <span class="emo-tag emo-tag-neutral" id="tagNeutral">Neutral <span class="emo-tag-pct" id="tagNeutralPct">—%</span></span>
+            <div class="emo-body-row">
+              <div class="emo-main-chips">
+                <div class="emo-main-chip" style="--chip-bg:rgba(107,114,128,0.13);--chip-color:#374151">
+                  <div class="emo-main-chip-dot" style="background:#6b7280"></div>
+                  <div class="emo-main-chip-label">Neutral</div>
+                  <div class="emo-main-chip-pct" id="tagNeutralSubPct">—%</div>
+                </div>
+              </div>
+              <div class="emo-tag-list">
+                <div class="emo-tag" style="--tag-color:#374151"><span class="emo-tag-dot" style="background:#6b7280"></span>Neutral</div>
+                <div style="font-size:9.5px;color:var(--text3);line-height:1.55;font-style:italic;width:100%;padding-left:2px">Stable attention — no strong emotional signal</div>
+              </div>
             </div>
           </div>
+
         </div>
         <div class="engage-score-chip" id="engScoreChip" style="display:none">
           <div class="engage-score-chip-num" id="engScoreChipNum">74</div>
@@ -311,6 +350,7 @@
 </div>
 
 <script src="script/auth.js"></script>
+<script src="script/shared/spike-detector.js"></script>
 <script src="script/pages/charts.js"></script>
 <script src="script/pages/timeline.js"></script>
 <script src="script/pages/analysis.js"></script>

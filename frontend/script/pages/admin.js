@@ -363,12 +363,12 @@ async function confirmDelete() {
   if (!pendingDelete) return;
 
   if (pendingDelete.table === 'manage-faqs') {
+    const faqId = pendingDelete.id;
     closeModal();
-    const res = await fetch(`/admin/faqs/${pendingDelete.id}`, {
+    const res = await fetch(`/admin/faqs/${faqId}`, {
       method: 'DELETE',
       headers: HEADERS.Authorization()
     });
-    pendingDelete = null;
     if (res && res.ok) {
       showToast('✓ FAQ deleted', 'success');
       await loadManageFaqs();

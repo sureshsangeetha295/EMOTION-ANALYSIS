@@ -26,6 +26,12 @@ const TREND_MAX=30;
 let timelineEvents=[];
 let lastEmotionKey=null,emotionChangeCooldown=0,_lastDetectStart=0;
 
+// ── Spike state ──
+let _spikeDetector=new SpikeDetector(10,1.8);
+let _spikeCount=0;
+let _spikeFrames=[];          // frame indices where spikes occurred (for chart markers)
+let _lastSpikeSummary=null;   // filled on doStop(), passed to generate-insights
+
 // ── Helpers ──
 function fmtTime(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60);return`${m}:${String(s%60).padStart(2,'0')}`;}
 function sessionTime(){return sessionStart?fmtTime(Date.now()-sessionStart):'0:00';}
@@ -43,7 +49,7 @@ function tickTimer(){
   }
 }
 
-// ── Emotion bars & chips ──
+// ── Emotion bars & mini-rows ──
 function updateEmotionBars(){
   const total=Object.values(emotionCounts).reduce((a,b)=>a+b,0)||1;
   const p=k=>Math.round((emotionCounts[k]||0)/total*100);
@@ -51,13 +57,23 @@ function updateEmotionBars(){
   const negTotal=p('angry')+p('sad')+p('fearful')+p('disgusted');
   const neuTotal=p('neutral');
   const setText=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  const setBar=(id,v)=>{const el=document.getElementById(id);if(el)el.style.width=v+'%';};
   setText('emoPosTotal',posTotal+'%');setText('emoNegTotal',negTotal+'%');setText('emoNeutralTotal',neuTotal+'%');
-  setBar('emoPosBar',posTotal);setBar('emoNegBar',negTotal);setBar('emoNeuBar',neuTotal);
-  setText('tagHappyPct',p('happy')+'%');setText('tagSurprisedPct',p('surprised')+'%');
-  setText('tagAngryPct',p('angry')+'%');setText('tagSadPct',p('sad')+'%');
-  setText('tagFearPct',p('fearful')+'%');setText('tagDisgustPct',p('disgusted')+'%');
-  setText('tagNeutralPct',neuTotal+'%');
+  // Main chips (big cards, left half)
+  setText('tagHappySubPct',p('happy')+'%');
+  setText('tagSurprisedSubPct',p('surprised')+'%');
+  setText('tagAngrySubPct',p('angry')+'%');
+  setText('tagSadSubPct',p('sad')+'%');
+  setText('tagFearSubPct',p('fearful')+'%');
+  setText('tagDisgustSubPct',p('disgusted')+'%');
+  setText('tagNeutralSubPct',p('neutral')+'%');
+  // Tag list (right half)
+  setText('tagHappyPct',p('happy')+'%');
+  setText('tagSurprisedPct',p('surprised')+'%');
+  setText('tagAngryPct',p('angry')+'%');
+  setText('tagSadPct',p('sad')+'%');
+  setText('tagFearPct',p('fearful')+'%');
+  setText('tagDisgustPct',p('disgusted')+'%');
+  setText('tagNeutralPct',p('neutral')+'%');
 }
 
 function updateDominantChips(){
@@ -70,10 +86,33 @@ function updateDominantChips(){
 }
 
 // ── Detection result ──
-function applyDetectionResult(backendEmotion,conf,engagement,probs){
+// ── Adaptive EMA alpha ──────────────────────────────────────────────────
+// Alpha adapts based on two signals:
+//   1. Confidence: high-confidence detections react faster (higher alpha)
+//   2. Emotion intensity: strong emotions (very positive/negative) react faster
+//      neutral/low-intensity emotions smooth more (lower alpha)
+// Result: noisy/uncertain frames barely move the score;
+//         clear strong emotions update it meaningfully.
+function adaptiveAlpha(conf, score){
+  // conf is 0–100, normalise to 0–1
+  const confNorm = Math.min(1, Math.max(0, conf / 100));
+  // intensity = how far score is from the neutral midpoint (60)
+  // scores range ~10 (disgust) to 90 (happy); midpoint ~50
+  const intensity = Math.abs(score - 50) / 50;  // 0 = pure neutral, 1 = extreme
+  // base alpha range: 0.08 (low conf/neutral) → 0.30 (high conf/strong emotion)
+  const alpha = 0.08 + (confNorm * 0.12) + (intensity * 0.10);
+  return Math.min(0.30, alpha);
+}
+
+function applyDetectionResult(backendEmotion,conf,engagement,probs,emaFromServer){
   const draftKey=BACKEND_TO_DRAFT[backendEmotion.toLowerCase()]||'neutral';
   const score=engagement!=null?engagement*100:(SCORE_MAP[draftKey]||50);
-  if(totalDetected===0){engagementScore=score;}else{engagementScore+=(score-engagementScore)*0.20;}
+  if(totalDetected===0){
+    engagementScore=score;
+  }else{
+    const alpha=adaptiveAlpha(conf, score);
+    engagementScore+=(score-engagementScore)*alpha;
+  }
   _engagementScores.push(engagementScore/100);
   totalDetected++;
   emotionCounts[draftKey]=(emotionCounts[draftKey]||0)+1;
@@ -83,6 +122,19 @@ function applyDetectionResult(backendEmotion,conf,engagement,probs){
     addTimelineEvent(`${EMOTION_LABELS[draftKey]||draftKey} detected`,EMOTION_EMOJIS[draftKey]||'🔍',draftKey);
     lastEmotionKey=draftKey;emotionChangeCooldown=5;
   }
+
+  // ── Client-side spike detection ────────────────────────────────────────
+  const emaForSpike = emaFromServer != null ? emaFromServer : engagementScore/100;
+  const spike = _spikeDetector.update(emaForSpike);
+  if(spike){
+    _spikeCount++;
+    _spikeFrames.push(_frameCount);  // record which render frame this was
+    updateSpikeCounter();
+    if(spike.direction==='drop'){
+      addTimelineEvent('Engagement drop detected','⚡','angry');
+    }
+  }
+
   const pill=document.getElementById('camEmotionPill');
   const name=document.getElementById('camEmotionName');
   const scoreEl=document.getElementById('camEmotionScore');
@@ -95,7 +147,7 @@ function applyDetectionResult(backendEmotion,conf,engagement,probs){
   const tierEl=document.getElementById('engageTierLabel');
   if(tierEl){tierEl.textContent=tier.label;tierEl.style.color=tier.color;}
   updateEngageLegend();
-  if(probs){showDistGraph();updateTrendGraph(probs);}
+  if(probs){showDistGraph();updateTrendGraph(probs,spike?_frameCount:null);}
   updateEmotionBars();updateDominantChips();
   _broadcast({type:'detection',emotion:draftKey,conf,engagement:engagementScore,probs,
     emotionCounts:{...emotionCounts},totalDetected,sessionTime:sessionTime(),
@@ -106,6 +158,14 @@ function applyDetectionResult(backendEmotion,conf,engagement,probs){
   const dominantEntry=Object.entries(emotionCounts).sort((a,b)=>b[1]-a[1])[0];
   if(pe&&dominantEntry)pe.textContent=EMOTION_LABELS[dominantEntry[0]]||dominantEntry[0];
   if(pc&&dominantEntry)pc.textContent=`${Math.round(dominantEntry[1]/totalAll*100)}% of session · highest share`;
+}
+
+function updateSpikeCounter(){
+  const el=document.getElementById('spikeCounterBadge');
+  if(!el)return;
+  if(_spikeCount===0){el.style.display='none';return;}
+  el.style.display='flex';
+  el.textContent=`⚡ ${_spikeCount} spike${_spikeCount!==1?'s':''}`;
 }
 
 // ── Camera capture & predict ──
@@ -133,7 +193,8 @@ async function callPredict(signal){
   const emotion=data.emotion;
   const conf=Math.round(data.confidence>1?data.confidence:data.confidence*100);
   const engagement=data.engagement!=null?data.engagement:(ENGAGEMENT_MAP[emotion]??0.5);
-  return{emotion,conf,engagement,probs};
+  const ema=data.ema!=null?data.ema:null;
+  return{emotion,conf,engagement,probs,ema};
 }
 
 function scheduleLive(){
@@ -146,9 +207,9 @@ function scheduleLive(){
       try{
         if(abortCtrl)abortCtrl.abort();
         abortCtrl=new AbortController();
-        const{emotion,conf,engagement,probs}=await callPredict(abortCtrl.signal);
+        const{emotion,conf,engagement,probs,ema}=await callPredict(abortCtrl.signal);
         _frameCount++;
-        applyDetectionResult(emotion,conf,engagement,probs);
+        applyDetectionResult(emotion,conf,engagement,probs,ema);
         document.getElementById('signalBar')?.classList.remove('show');
       }catch(err){
         if(err.name!=='AbortError'){console.error('[EmotionAI]',err);document.getElementById('signalBar')?.classList.add('show');}
@@ -189,6 +250,9 @@ async function doStart(){
     engagementScore=0;lastEmotion=null;totalDetected=0;emotionCounts={};reactionCount=0;
     peakConf=0;lastEmotionKey=null;emotionChangeCooldown=0;
     TREND_HISTORY.length=0;timelineEvents=[];
+    // Reset spike state
+    _spikeDetector.reset();_spikeCount=0;_spikeFrames=[];_lastSpikeSummary=null;
+    updateSpikeCounter();
     _broadcast({type:'session_start'});
     _sessionNum++;
     // Reset UI
@@ -202,8 +266,8 @@ async function doStart(){
     const tipsReset=document.getElementById('tipsBody');
     if(tipsReset)tipsReset.innerHTML='<span style="font-size:10.5px;color:var(--text3);font-style:italic">Generate analysis to get personalized tips.</span>';
     const innerReset=document.getElementById('analysisInner');if(innerReset)innerReset.classList.remove('revealed');
-    ['emoPosTotal','emoNegTotal','emoNeutralTotal','tagHappyPct','tagSurprisedPct','tagAngryPct','tagSadPct','tagFearPct','tagDisgustPct','tagNeutralPct'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—%';});
-    ['emoPosBar','emoNegBar','emoNeuBar'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.width='0%';});
+    ['emoPosTotal','emoNegTotal','emoNeutralTotal'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—%';});
+    ['tagHappySubPct','tagSurprisedSubPct','tagAngrySubPct','tagSadSubPct','tagFearSubPct','tagDisgustSubPct','tagNeutralSubPct','tagHappyPct','tagSurprisedPct','tagAngryPct','tagSadPct','tagFearPct','tagDisgustPct','tagNeutralPct'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—%';});
     document.getElementById('engScoreChip').style.display='none';
     document.getElementById('distEmpty').style.display='flex';
     document.getElementById('distGraphArea').style.display='none';
@@ -271,6 +335,8 @@ async function doStop(){
   document.getElementById('signalBar')?.classList.remove('show');
   const dur=sessionTime();
   addTimelineEvent(`Session ended — ${dur} total`,'🏁','end');
+  // Capture spike summary before clearing
+  _lastSpikeSummary=_spikeDetector.summary();
   if(_sessionId){
     try{await Auth.apiFetch('/sessions/end/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:_sessionId,total_frames:_frameCount})});}
     catch(e){console.warn('[EmotionAI] Session end:',e);}

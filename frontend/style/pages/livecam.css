@@ -15,9 +15,6 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-hei
 nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:54px;background:rgba(253,248,244,0.96);border-bottom:1px solid var(--border);backdrop-filter:blur(20px);position:sticky;top:0;z-index:300}
 .nav-logo{display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-weight:600;font-size:1rem;text-decoration:none;color:var(--text)}
 .logo-box{width:30px;height:30px;border-radius:9px;background:var(--grad);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px var(--accent-glow)}
-
-
-
 .nav-live-badge{display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:99px;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.2);font-size:11px;font-weight:700;color:#dc2626;letter-spacing:0.06em}
 .nav-live-dot{width:6px;height:6px;border-radius:50%;background:#dc2626;animation:livePip 1s ease-in-out infinite}
 @keyframes livePip{0%,100%{opacity:1}50%{opacity:0.2}}
@@ -197,16 +194,13 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px
 .btn-analyse:disabled{opacity:0.45;cursor:not-allowed}
 .btn-analyse svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .analysis-inner{display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:stretch}
-.analysis-left{padding:16px 18px;border-right:1px solid var(--border);display:flex;flex-direction:column}
+.analysis-left{padding:16px 18px;border-right:1px solid var(--border);display:flex;flex-direction:column;height:100%}
 .analysis-right{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
 .analysis-section-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px}
-/* Emotion breakdown — vertical equal-height cards */
 .emo-category-cards{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;flex:1}
-/* Analysis body hidden until generated */
 #analysisInner{display:none}
 #analysisInner.revealed{display:grid}
-/* Square-style equal-height emotion cards */
-.emo-cat-card{border-radius:10px;padding:10px 12px;border:1.5px solid transparent;cursor:default;transition:all 0.2s;flex:1;display:flex;flex-direction:column;justify-content:space-between}
+.emo-cat-card{border-radius:10px;padding:10px 12px;border:1.5px solid transparent;cursor:default;transition:all 0.2s;flex:1;display:flex;flex-direction:column;justify-content:flex-start}
 .emo-cat-positive{background:rgba(22,163,74,0.05);border-color:rgba(22,163,74,0.18)}
 .emo-cat-positive:hover{background:rgba(22,163,74,0.1);border-color:rgba(22,163,74,0.35);box-shadow:0 2px 12px rgba(22,163,74,0.12)}
 .emo-cat-negative{background:rgba(220,38,38,0.05);border-color:rgba(220,38,38,0.15)}
@@ -240,19 +234,12 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px
 .analysis-typing span:nth-child(2){animation-delay:0.2s}
 .analysis-typing span:nth-child(3){animation-delay:0.4s}
 @keyframes typingDot{0%,60%,100%{opacity:0.2;transform:scale(0.8)}30%{opacity:1;transform:scale(1)}}
-
 .hamburger-btn span{display:block;width:16px;height:2px;background:var(--text);border-radius:2px;transition:transform .25s,opacity .2s}
 .hamburger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
 .hamburger-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
 .hamburger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
 
 /* ── Emotion category cards ─────────────────────────────────────── */
-.emo-cat-positive{background:rgba(22,163,74,0.05);border-color:rgba(22,163,74,0.18)}
-.emo-cat-positive:hover{background:rgba(22,163,74,0.1);border-color:rgba(22,163,74,0.35);box-shadow:0 2px 12px rgba(22,163,74,0.12)}
-.emo-cat-negative{background:rgba(220,38,38,0.05);border-color:rgba(220,38,38,0.15)}
-.emo-cat-negative:hover{background:rgba(220,38,38,0.09);border-color:rgba(220,38,38,0.3);box-shadow:0 2px 12px rgba(220,38,38,0.10)}
-.emo-cat-neutral{background:rgba(107,114,128,0.05);border-color:rgba(107,114,128,0.15)}
-.emo-cat-neutral:hover{background:rgba(107,114,128,0.09);border-color:rgba(107,114,128,0.3);box-shadow:0 2px 12px rgba(107,114,128,0.10)}
 .emo-cat-header{display:flex;align-items:center;gap:7px;margin-bottom:5px}
 .emo-cat-icon{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .emo-cat-positive .emo-cat-icon{background:rgba(22,163,74,0.12);color:#16a34a}
@@ -268,20 +255,28 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px
 .emo-cat-negative .emo-cat-pct{color:#dc2626}
 .emo-cat-neutral .emo-cat-pct{color:#6b7280}
 .emo-cat-tags{display:flex;flex-wrap:wrap;gap:5px}
-.emo-cat-bar{height:4px;border-radius:99px;margin:6px 0 5px;transition:width 0.6s ease}
-.emo-cat-positive .emo-cat-bar{background:rgba(22,163,74,0.4)}
-.emo-cat-negative .emo-cat-bar{background:rgba(220,38,38,0.4)}
-.emo-cat-neutral .emo-cat-bar{background:rgba(107,114,128,0.4)}
-.emo-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600}
-.emo-tag-pct{font-weight:700;opacity:0.85}
-.emo-tag-happy{background:rgba(232,68,10,0.1);color:var(--accent)}
-.emo-tag-surprised{background:rgba(245,158,11,0.12);color:#b45309}
-.emo-tag-angry{background:rgba(220,38,38,0.1);color:#dc2626}
-.emo-tag-sad{background:rgba(59,130,246,0.1);color:#1d4ed8}
-.emo-tag-fearful{background:rgba(249,115,22,0.1);color:#c2410c}
-.emo-tag-disgusted{background:rgba(124,58,237,0.1);color:#7c3aed}
-.emo-tag-neutral{background:rgba(107,114,128,0.1);color:#4b5563}
-/* ── Tips box ──────────────────────────────────────────────────── */
+.emo-body-row{display:flex;flex-direction:row;gap:8px;margin-top:10px;min-height:72px;align-items:stretch}
+.emo-main-chips{display:flex;flex-direction:row;gap:6px;width:50%;flex-shrink:0}
+.emo-main-chip{flex:1;background:var(--chip-bg);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.emo-main-chip-dot{width:8px;height:8px;border-radius:50%}
+.emo-main-chip-label{font-size:11px;font-weight:600;color:var(--chip-color)}
+.emo-main-chip-pct{font-size:18px;font-weight:700;color:var(--chip-color)}
+
+/* ── UPDATED: Tag list — centered, pill style, no background color, no percentage ── */
+.emo-tag-list{display:flex;flex-direction:row;flex-wrap:wrap;gap:7px;flex:1;align-content:center;justify-content:flex-start;padding-top:2px}
+.emo-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,0.04);border-radius:99px;padding:5px 12px;font-size:11px;font-weight:400;color:var(--tag-color);white-space:nowrap}
+.emo-tag-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.emo-neutral-desc{font-size:9.5px;color:var(--text3);line-height:1.55;margin-top:4px;font-style:italic;width:100%}
+
+/* ── Per-emotion mini-bar rows ── */
+.emo-rows{display:flex;flex-direction:column;gap:6px}
+.emo-row{display:grid;grid-template-columns:90px 1fr 32px;align-items:center;gap:7px}
+.emo-row-left{display:flex;align-items:center;gap:5px;min-width:0}
+.emo-row-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.emo-row-label{font-size:10.5px;font-weight:600;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.emo-row-pct{font-size:10px;font-weight:700;color:var(--text2);text-align:right;font-family:var(--font-display)}
+
+/* ── Tips box ── */
 .tips-box{border:1.5px solid var(--border2);border-radius:10px;padding:10px 13px;background:var(--elevated);flex-shrink:0}
 .tips-header{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--accent);margin-bottom:7px;letter-spacing:0.04em;text-transform:uppercase}
 .tips-body{display:flex;flex-direction:column;gap:5px}
@@ -302,13 +297,11 @@ nav{position:sticky;top:0;z-index:300;height:64px;display:flex;flex-direction:ro
 .nav-actions{display:flex !important;flex-direction:row !important;gap:10px;align-items:center;flex-shrink:0}
 .btn-ghost-sm{font-size:13px;font-weight:600;padding:7px 16px;border-radius:99px;border:1.5px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;text-decoration:none;transition:all 0.15s;display:inline-flex;flex-direction:row;align-items:center;gap:6px;white-space:nowrap;font-family:var(--font-body)}
 .btn-ghost-sm:hover{border-color:var(--accent);color:var(--accent)}
-/* Hamburger — far right, mobile only */
 .hamburger-btn{display:none !important;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:36px;height:36px;background:transparent;border:1.5px solid var(--border2);border-radius:8px;cursor:pointer;padding:0;flex-shrink:0}
 .hamburger-btn span{display:block;width:16px;height:2px;background:var(--text);border-radius:2px;transition:transform 0.25s ease,opacity 0.2s ease;transform-origin:center}
 .hamburger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
 .hamburger-btn.open span:nth-child(2){opacity:0;transform:scaleX(0)}
 .hamburger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
-/* Drawer slides in from LEFT */
 .mobile-drawer{position:fixed;top:0;left:0;bottom:0;width:280px;max-width:82vw;background:rgba(253,248,244,0.99);backdrop-filter:blur(24px);border-right:1px solid var(--border);z-index:400;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);box-shadow:4px 0 32px rgba(0,0,0,0.10);visibility:hidden}
 .mobile-drawer.open{transform:translateX(0);visibility:visible}
 .mobile-drawer ul{list-style:none;padding:8px 0;flex:1;margin:0}

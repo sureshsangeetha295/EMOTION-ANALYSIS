@@ -8,6 +8,60 @@ function launchApp(e) {
   }
 }
 
+/* ── FAQ dynamic loading ── */
+var _allFaqItems = [];
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderFaqItem(faq, first) {
+  var item = document.createElement('div');
+  item.className = 'faq-item' + (first ? ' open' : '');
+  item.dataset.cat = faq.category || 'general';
+  item.dataset.id  = faq.id || '';
+  item.innerHTML =
+    '<div class="faq-q" onclick="toggleFAQ(this.parentElement)">'
+    + escapeHtml(faq.question)
+    + '<svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+    + '</div>'
+    + '<div class="faq-a"><p>' + escapeHtml(faq.answer) + '</p>'
+    + '<div class="faq-a-footer">'
+    + '<span class="helpful-txt">Was this helpful?</span>'
+    + '<button class="helpful-btn" onclick="vote(this,\'yes\')">👍 Yes</button>'
+    + '<button class="helpful-btn" onclick="vote(this,\'no\')">👎 No</button>'
+    + '</div></div>';
+  return item;
+}
+
+function loadFAQs() {
+  fetch('/api/faqs')
+    .then(function(r){ return r.json(); })
+    .then(function(faqs) {
+      var list = document.getElementById('faqList');
+      var loading = document.getElementById('faqLoading');
+      if (loading) loading.remove();
+
+      if (!Array.isArray(faqs) || faqs.length === 0) {
+        list.innerHTML = '<p style="padding:2rem;color:var(--text2,#888);text-align:center;">No FAQs available yet.</p>';
+        return;
+      }
+
+      _allFaqItems = faqs;
+      faqs.forEach(function(faq, i) {
+        list.appendChild(renderFaqItem(faq, i === 0));
+      });
+    })
+    .catch(function() {
+      var loading = document.getElementById('faqLoading');
+      if (loading) loading.textContent = 'Could not load FAQs. Please try refreshing.';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', loadFAQs);
+
 /* ── FAQ logic ── */
 function toggleFAQ(item){item.classList.toggle('open');}
 

@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="style/pages/login.css"/>
 <!-- reCAPTCHA v2 — loaded only when a site key is configured -->
 <script src="https://www.google.com/recaptcha/api.js?onload=_onRecaptchaLoad&render=explicit" async defer></script>
+<script src="script/network-alert.js" defer></script>
 </head>
 <body>
 
@@ -47,9 +48,7 @@
     <button class="tab-btn admin-tab" onclick="switchTab('admin')"  id="tab-admin" style="display:none">Admin</button>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       SIGN IN PANEL
-  ══════════════════════════════════════════ -->
+  <!-- SIGN IN PANEL -->
   <div class="panel active" id="panel-signin">
 
     <div class="msg" id="msg-signin">
@@ -94,7 +93,7 @@
     </div>
 
     <!-- reCAPTCHA v2 — widget rendered dynamically once site key is fetched -->
-    <div class="captcha-wrap" id="captcha-wrap" style="margin:16px 0;">
+    <div class="captcha-wrap" id="captcha-wrap" style="margin:16px 0; display:flex; flex-direction:column; align-items:center;">
       <div id="g-recaptcha-container"></div>
       <div id="captcha-error" style="display:none;color:#ef4444;font-size:12px;margin-top:6px;">
         Please complete the reCAPTCHA verification.
@@ -108,9 +107,7 @@
   </div><!-- /panel-signin -->
 
 
-  <!-- ══════════════════════════════════════════
-       SIGN UP PANEL
-  ══════════════════════════════════════════ -->
+  <!-- SIGN UP PANEL -->
   <div class="panel" id="panel-signup">
 
     <div class="msg" id="msg-signup">
@@ -167,18 +164,48 @@
         </div>
         <span class="strength-label" id="strength-label">Enter a password</span>
       </div>
-      <div class="field-error" id="pw-error"></div>
     </div>
 
     <div class="field">
       <label>Confirm Password</label>
       <div class="pw-wrap">
-        <input type="password" id="su-confirm" placeholder="Repeat your password" autocomplete="new-password" oninput="checkConfirm(this.value)"/>
+        <input type="password" id="su-confirm" placeholder="Repeat your password" autocomplete="new-password"/>
         <button class="eye-btn" type="button" onclick="togglePw('su-confirm',this)">
           <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </div>
-      <div class="field-error" id="confirm-error"></div>
+    </div>
+
+    <div class="sq-block">
+      <div class="sq-block-header">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <div>
+          <div class="sq-block-title">Security Questions</div>
+          <div class="sq-block-sub">Used for account recovery</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Question 1</label>
+        <select id="sq1-q">
+          <option value="">Select a question…</option>
+          <option value="pet">What was the name of your first pet?</option>
+          <option value="city">What city were you born in?</option>
+          <option value="school">What was the name of your primary school?</option>
+          <option value="mother">What is your mother's maiden name?</option>
+        </select>
+        <input type="text" id="sq1-a" placeholder="Your answer…" autocomplete="off" style="margin-top:6px;"/>
+      </div>
+      <div class="field">
+        <label>Question 2</label>
+        <select id="sq2-q">
+          <option value="">Select a question…</option>
+          <option value="movie">What is your favourite childhood movie?</option>
+          <option value="teacher">What was your favourite teacher's name?</option>
+          <option value="sport">What sport did you play first?</option>
+          <option value="colour">What is your favourite colour?</option>
+        </select>
+        <input type="text" id="sq2-a" placeholder="Your answer…" autocomplete="off" style="margin-top:6px;"/>
+      </div>
     </div>
 
     <button class="btn-submit" id="btn-signup" onclick="handleSignUp()">
@@ -188,9 +215,7 @@
   </div><!-- /panel-signup -->
 
 
-  <!-- ══════════════════════════════════════════
-       RESET PASSWORD PANEL
-  ══════════════════════════════════════════ -->
+  <!-- RESET PASSWORD PANEL -->
   <div class="panel" id="panel-reset">
 
     <div class="msg" id="msg-reset">
@@ -198,7 +223,6 @@
       <span id="msg-reset-txt"></span>
     </div>
 
-    <!-- Step indicator -->
     <div class="step-indicator">
       <div class="step-dot active" id="sd1">1</div>
       <div class="step-line" id="sl1"></div>
@@ -212,7 +236,6 @@
       <span class="step-lbl" id="slbl3">New Password</span>
     </div>
 
-    <!-- Step 1: Email -->
     <div class="reset-step active" id="rs1">
       <div class="field">
         <label>Your Email Address</label>
@@ -224,7 +247,6 @@
       </button>
     </div>
 
-    <!-- Step 2: Enter OTP -->
     <div class="reset-step" id="rs2">
       <div class="msg info" id="msg-rs2-info" style="display:flex">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -246,7 +268,6 @@
       </div>
     </div>
 
-    <!-- Step 3: New Password -->
     <div class="reset-step" id="rs3">
       <div class="field">
         <label>New Password</label>
@@ -283,9 +304,7 @@
   </div><!-- /panel-reset -->
 
 
-  <!-- ══════════════════════════════════════════
-       ADMIN PANEL
-  ══════════════════════════════════════════ -->
+  <!-- ADMIN PANEL -->
   <div class="panel" id="panel-admin">
 
     <div class="msg" id="msg-admin">
@@ -324,7 +343,6 @@
 
 </div><!-- /card -->
 
-<!-- Footer links -->
 <div class="footer-links">
   <span onclick="resetActiveForm()" title="Clear all fields">↺ Reset</span>
   <div class="footer-dot"></div>

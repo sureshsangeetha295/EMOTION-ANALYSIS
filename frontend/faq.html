@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,300;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="style/pages/faq.css"/>
 <script src="script/auth.js"></script>
+<script src="script/network-alert.js" defer></script>
 </head>
 <body>
 
@@ -181,79 +182,7 @@
   <div class="faq-content">
     <h2 id="faqHeading">All questions</h2>
     <div class="faq-list" id="faqList">
-
-      <div class="faq-item open" data-cat="general">
-        <div class="faq-q" onclick="toggleFAQ(this.parentElement)">What is Emotion Analysis and what does it do?<svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="faq-a"><p>Emotion Analysis is a real-time AI-powered tool that detects and tracks facial emotions during live sessions. It identifies 7 emotions — Happy, Sad, Angry, Surprised, Fearful, Disgusted, and Neutral — through your webcam and provides an engagement score, session timeline, emotion breakdown, and AI-generated insights to help educators and learners understand engagement patterns.</p>
-        <div class="faq-a-footer"><span class="helpful-txt">Was this helpful?</span><button class="helpful-btn" onclick="vote(this,'yes')">👍 Yes</button><button class="helpful-btn" onclick="vote(this,'no')">👎 No</button></div></div>
-      </div>
-
-      <div class="faq-item" data-cat="general">
-        <div class="faq-q" onclick="toggleFAQ(this.parentElement)">Do I need an account to use Emotion Analysis?<svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="faq-a"><p>Yes, an account is required to use the live session features. Sign up with your email and set up two security questions for account recovery. Once logged in, you get access to live detection, session history, analysis reports, and personalized insights. Admin accounts have an additional dashboard for managing all user sessions.</p>
-        <div class="faq-a-footer"><span class="helpful-txt">Was this helpful?</span><button class="helpful-btn" onclick="vote(this,'yes')">👍 Yes</button><button class="helpful-btn" onclick="vote(this,'no')">👎 No</button></div></div>
-      </div>
-
-      <div class="faq-item" data-cat="general">
-        <div class="faq-q" onclick="toggleFAQ(this.parentElement)">Which browsers are supported?<svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="faq-a"><p>Emotion Analysis works on Chrome, Edge, Firefox, and Safari — any modern browser with WebRTC webcam support. No plugins or downloads needed. For the best performance and most accurate detection, Chrome or Edge on a desktop or laptop is recommended.</p>
-        <div class="faq-a-footer"><span class="helpful-txt">Was this helpful?</span><button class="helpful-btn" onclick="vote(this,'yes')">👍 Yes</button><button class="helpful-btn" onclick="vote(this,'no')">👎 No</button></div></div>
-      </div>
-
-      <div class="faq-item" data-cat="detection">
-        <div class="faq-q" onclick="toggleFAQ(this.parentElement)">How accurate is the emotion detection?<svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="faq-a"><p>The model is trained on the RAF-DB dataset and detects 7 emotion classes. Accuracy is highest when your face is well-lit, centered, and at a natural angle. The confidence score shown on screen reflects how certain the model is for each frame.</p>
-        <div class="faq-a-footer"><span class="helpful-txt">Was this helpful?</span><button class="helpful-btn" onclick="vote(this,'yes')">👍 Yes</button><button class="helpful-btn" onclick="vote(this,'no')">👎 No</button></div></div>
-      </div>
-
-      <div class="faq-item" data-cat="detection">
-        <div class="faq-q" onclick="toggleFAQ(this.parentElement)">Why is the live detection not working or showing errors?<svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="faq-a"><p>First, ensure the backend server is running. Then check that camera permission is granted. Make sure your face is well-lit and fully visible in the frame. A "Weak Signal" warning means the server isn't responding; check your connection.</p>
-        <div class="faq-a-footer"><span class="helpful-txt">Was this helpful?</span><button class="helpful-btn" onclick="vote(this,'yes')">👍 Yes</button><button class="helpful-btn" onclick="vote(this,'no')">👎 No</button></div></div>
-      </div>
-
-      <div class="faq-item" data-cat="detection">
-        <div class="faq-q" onclick="toggleFAQ(this.parentElement)">What is the difference between Live Cam and Detect mode?<svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="faq-a"><p>Live Cam is a continuous session mode that tracks emotion trends over time and produces a full engagement report. Detect mode is a single-snapshot mode — you upload or capture one image and instantly get that frame's emotion probabilities.</p>
-        <div class="faq-a-footer"><span class="helpful-txt">Was this helpful?</span><button class="helpful-btn" onclick="vote(this,'yes')">👍 Yes</button><button class="helpful-btn" onclick="vote(this,'no')">👎 No</button></div></div>
-      </div>
-
-      <div class="faq-item" data-cat="analysis">
-        <div class="faq-q" onclick="toggleFAQ(this.parentElement)">How does the engagement score work?<svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="faq-a"><p>The engagement score (0–100) is a weighted average calculated across all detected emotions during the session. Positive emotions contribute most. A score above 75 indicates strong engagement, 50–74 is moderate, and below 50 suggests the learner may be disengaged.</p>
-        <div class="faq-a-footer"><span class="helpful-txt">Was this helpful?</span><button class="helpful-btn" onclick="vote(this,'yes')">👍 Yes</button><button class="helpful-btn" onclick="vote(this,'no')">👎 No</button></div></div>
-      </div>
-
-      <div class="faq-item" data-cat="analysis">
-        <div class="faq-q" onclick="toggleFAQ(this.parentElement)">What does "Generate Analysis" do and when should I use it?<svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="faq-a"><p>After stopping a session, click "Generate Analysis" to get a complete breakdown including Emotion Breakdown panel, Engagement Score, Key Insights with timestamps, and personalised Tips with actionable advice.</p>
-        <div class="faq-a-footer"><span class="helpful-txt">Was this helpful?</span><button class="helpful-btn" onclick="vote(this,'yes')">👍 Yes</button><button class="helpful-btn" onclick="vote(this,'no')">👎 No</button></div></div>
-      </div>
-
-      <div class="faq-item" data-cat="analysis">
-        <div class="faq-q" onclick="toggleFAQ(this.parentElement)">Can I scroll back through the live emotion trend graph?<svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="faq-a"><p>Yes. The Live Emotion Trend graph retains all data points from the entire session. You can scroll left at any time to review older emotion patterns. Hovering over any point shows a tooltip with the dominant emotion and confidence percentage.</p>
-        <div class="faq-a-footer"><span class="helpful-txt">Was this helpful?</span><button class="helpful-btn" onclick="vote(this,'yes')">👍 Yes</button><button class="helpful-btn" onclick="vote(this,'no')">👎 No</button></div></div>
-      </div>
-
-      <div class="faq-item" data-cat="privacy">
-        <div class="faq-q" onclick="toggleFAQ(this.parentElement)">Is my camera feed stored or shared?<svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="faq-a"><p>No. Your camera feed is never stored or shared. Frames are captured locally, sent to the backend only for analysis, and immediately discarded once the prediction is returned. No images, video, or biometric data are saved to any server or database.</p>
-        <div class="faq-a-footer"><span class="helpful-txt">Was this helpful?</span><button class="helpful-btn" onclick="vote(this,'yes')">👍 Yes</button><button class="helpful-btn" onclick="vote(this,'no')">👎 No</button></div></div>
-      </div>
-
-      <div class="faq-item" data-cat="privacy">
-        <div class="faq-q" onclick="toggleFAQ(this.parentElement)">What data does Emotion Analysis collect about me?<svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="faq-a"><p>Only your account information (email, username, hashed password, and security question answers) is stored for login and recovery. During sessions, only the emotion prediction results and engagement scores are saved — not the raw video or images.</p>
-        <div class="faq-a-footer"><span class="helpful-txt">Was this helpful?</span><button class="helpful-btn" onclick="vote(this,'yes')">👍 Yes</button><button class="helpful-btn" onclick="vote(this,'no')">👎 No</button></div></div>
-      </div>
-
-      <div class="faq-item" data-cat="privacy">
-        <div class="faq-q" onclick="toggleFAQ(this.parentElement)">How do I reset my password if I forget it?<svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="faq-a"><p>On the login page, click the "Reset" tab. Enter your registered email and answer the two security questions you set during sign-up. If both answers are correct, you can set a new password immediately. No email link is required.</p>
-        <div class="faq-a-footer"><span class="helpful-txt">Was this helpful?</span><button class="helpful-btn" onclick="vote(this,'yes')">👍 Yes</button><button class="helpful-btn" onclick="vote(this,'no')">👎 No</button></div></div>
-      </div>
-
+      <div id="faqLoading" style="padding:2rem;text-align:center;color:var(--text2,#888);">Loading FAQs…</div>
     </div>
 
     <div class="contact-card">
