@@ -7,6 +7,169 @@
 <title>EmotionAI — Live Cam</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,300;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="style/pages/livecam.css"/>
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   FIX 1 — Mobile donut / engagement pie alignment
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .engage-pie-wrap {
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 12px 14px;
+  }
+
+  .engage-pie-container {
+    width: 140px;
+    height: 140px;
+    flex-shrink: 0;
+  }
+
+  #engagePieCanvas {
+    width: 140px !important;
+    height: 140px !important;
+  }
+
+  .engage-pie-legend {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 14px;
+    min-width: unset;
+    width: 100%;
+  }
+
+  .engage-leg-item {
+    gap: 5px;
+  }
+
+  .engage-leg-name {
+    font-size: 11px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FIX 2 — Use-case banner: ensure full banner aligns items center
+   ═══════════════════════════════════════════════════════════════════ */
+
+.usecase-banner {
+  align-items: center !important;
+}
+
+.usecase-banner-right {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 260px;
+  align-items: flex-end;
+  justify-content: center;
+  align-self: center;
+}
+
+.usecase-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border: 1px solid rgba(232,68,10,0.18);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(232,68,10,0.03);
+  width: 100%;
+}
+
+.usecase-stat-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 8px;
+  border-right: 1px solid rgba(232,68,10,0.12);
+  border-bottom: 1px solid rgba(232,68,10,0.12);
+  gap: 4px;
+}
+
+.usecase-stat-cell:nth-child(3),
+.usecase-stat-cell:nth-child(6) {
+  border-right: none;
+}
+
+.usecase-stat-cell:nth-child(4),
+.usecase-stat-cell:nth-child(5),
+.usecase-stat-cell:nth-child(6) {
+  border-bottom: none;
+}
+
+.usecase-stat-cell-num {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.usecase-stat-cell-label {
+  font-size: 8px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  text-align: center;
+  line-height: 1.35;
+}
+
+.usecase-stat-cell-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 5px 9px;
+  white-space: nowrap;
+}
+
+/* Hide the old stat/pill rows */
+.usecase-stat-row,
+.usecase-pill-row {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .usecase-banner {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start !important;
+  }
+
+  .usecase-banner-right {
+    align-items: flex-start;
+    align-self: auto;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .usecase-stat-grid {
+    width: 100%;
+  }
+
+  .usecase-stat-cell-pill {
+    font-size: 9px;
+    padding: 3px 7px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FIX 3 — Emotion chips grid: allow wrapping so all chips show
+   ═══════════════════════════════════════════════════════════════════ */
+.emo-main-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+</style>
 <script src="script/network-alert.js" defer></script>
 </head>
 <body>
@@ -54,6 +217,56 @@
 </div>
 
 <div class="page">
+
+  <!-- USE CASE BANNER -->
+  <div class="usecase-banner">
+    <div class="usecase-banner-left">
+      <div class="usecase-tag">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Use Case
+      </div>
+      <div class="usecase-title">Real-Time Classroom Emotion Monitoring</div>
+      <div class="usecase-desc">
+        This live camera mode is designed for <strong>educators, trainers, and presenters</strong> who want to understand how their audience feels in real time.
+        The system captures frames from your webcam, runs them through a deep learning model (FER-based CNN), and classifies expressions into 7 emotion categories — all within milliseconds.
+      </div>
+      <div class="usecase-desc" style="margin-top:6px">
+        Emotion signals are aggregated into an <strong>engagement score</strong>, tracked over time, and surfaced as trends, dominant emotion chips, and AI-generated insights — helping you adapt your delivery on the fly.
+      </div>
+    </div>
+
+    <!-- RIGHT SIDE: 3×2 grid — vertically centered -->
+    <div class="usecase-banner-right">
+      <div class="usecase-stat-grid">
+
+        <!-- Row 1: numbers + labels -->
+        <div class="usecase-stat-cell">
+          <div class="usecase-stat-cell-num">7</div>
+          <div class="usecase-stat-cell-label">Emotion classes</div>
+        </div>
+        <div class="usecase-stat-cell">
+          <div class="usecase-stat-cell-num">~30</div>
+          <div class="usecase-stat-cell-label">FPS inference</div>
+        </div>
+        <div class="usecase-stat-cell">
+          <div class="usecase-stat-cell-num">CNN</div>
+          <div class="usecase-stat-cell-label">Model architecture</div>
+        </div>
+
+        <!-- Row 2: feature pills -->
+        <div class="usecase-stat-cell">
+          <span class="usecase-stat-cell-pill">📊 Live trend graph</span>
+        </div>
+        <div class="usecase-stat-cell">
+          <span class="usecase-stat-cell-pill">⚡ Spike detection</span>
+        </div>
+        <div class="usecase-stat-cell">
+          <span class="usecase-stat-cell-pill">🤖 AI insights</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
   <div class="how-strip">
     <div class="how-strip-label">HOW TO USE</div>
@@ -240,24 +453,32 @@
         <div class="analysis-section-title">Emotion breakdown</div>
         <div class="emo-category-cards" id="emoCategoryCards">
 
-          <!-- POSITIVE -->
+          <!-- ── POSITIVE ── -->
           <div class="emo-cat-card emo-cat-positive" id="emoCatPositive">
             <div class="emo-cat-header">
-              <div class="emo-cat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+              <div class="emo-cat-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M8 13s1.5 2 4 2 4-2 4-2"/>
+                  <line x1="9" y1="9" x2="9.01" y2="9"/>
+                  <line x1="15" y1="9" x2="15.01" y2="9"/>
+                </svg>
+              </div>
               <div class="emo-cat-title">Positive</div>
               <div class="emo-cat-pct" id="emoPosTotal">—%</div>
             </div>
             <div class="emo-body-row">
+              <!-- Chips: Happy + Surprised (both positive emotions) -->
               <div class="emo-main-chips">
                 <div class="emo-main-chip" style="--chip-bg:rgba(245,158,11,0.13);--chip-color:#b45309">
                   <div class="emo-main-chip-dot" style="background:#f59e0b"></div>
                   <div class="emo-main-chip-label">Happy</div>
-                  <div class="emo-main-chip-pct" id="tagHappySubPct">—%</div>
+                  <div class="emo-main-chip-pct" id="tagHappySubPct">0%</div>
                 </div>
                 <div class="emo-main-chip" style="--chip-bg:rgba(236,72,153,0.13);--chip-color:#be185d">
                   <div class="emo-main-chip-dot" style="background:#ec4899"></div>
                   <div class="emo-main-chip-label">Surprised</div>
-                  <div class="emo-main-chip-pct" id="tagSurprisedSubPct">—%</div>
+                  <div class="emo-main-chip-pct" id="tagSurprisedSubPct">0%</div>
                 </div>
               </div>
               <div class="emo-tag-list">
@@ -267,24 +488,42 @@
             </div>
           </div>
 
-          <!-- NEGATIVE -->
+          <!-- ── NEGATIVE ── -->
           <div class="emo-cat-card emo-cat-negative" id="emoCatNegative">
             <div class="emo-cat-header">
-              <div class="emo-cat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+              <div class="emo-cat-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M16 16s-1.5-2-4-2-4 2-4 2"/>
+                  <line x1="9" y1="9" x2="9.01" y2="9"/>
+                  <line x1="15" y1="9" x2="15.01" y2="9"/>
+                </svg>
+              </div>
               <div class="emo-cat-title">Negative</div>
               <div class="emo-cat-pct" id="emoNegTotal">—%</div>
             </div>
             <div class="emo-body-row">
+              <!-- FIX: All 4 negative emotions now have chips — Angry, Sad, Fear, Disgust -->
               <div class="emo-main-chips">
                 <div class="emo-main-chip" style="--chip-bg:rgba(239,68,68,0.13);--chip-color:#b91c1c">
                   <div class="emo-main-chip-dot" style="background:#ef4444"></div>
                   <div class="emo-main-chip-label">Angry</div>
-                  <div class="emo-main-chip-pct" id="tagAngrySubPct">—%</div>
+                  <div class="emo-main-chip-pct" id="tagAngrySubPct">0%</div>
                 </div>
                 <div class="emo-main-chip" style="--chip-bg:rgba(59,130,246,0.13);--chip-color:#1d4ed8">
                   <div class="emo-main-chip-dot" style="background:#3b82f6"></div>
                   <div class="emo-main-chip-label">Sad</div>
-                  <div class="emo-main-chip-pct" id="tagSadSubPct">—%</div>
+                  <div class="emo-main-chip-pct" id="tagSadSubPct">0%</div>
+                </div>
+                <div class="emo-main-chip" style="--chip-bg:rgba(168,85,247,0.13);--chip-color:#7e22ce">
+                  <div class="emo-main-chip-dot" style="background:#a855f7"></div>
+                  <div class="emo-main-chip-label">Fear</div>
+                  <div class="emo-main-chip-pct" id="tagFearSubPct">0%</div>
+                </div>
+                <div class="emo-main-chip" style="--chip-bg:rgba(16,185,129,0.13);--chip-color:#065f46">
+                  <div class="emo-main-chip-dot" style="background:#10b981"></div>
+                  <div class="emo-main-chip-label">Disgust</div>
+                  <div class="emo-main-chip-pct" id="tagDisgustSubPct">0%</div>
                 </div>
               </div>
               <div class="emo-tag-list">
@@ -296,10 +535,17 @@
             </div>
           </div>
 
-          <!-- NEUTRAL -->
+          <!-- ── NEUTRAL ── -->
           <div class="emo-cat-card emo-cat-neutral" id="emoCatNeutral">
             <div class="emo-cat-header">
-              <div class="emo-cat-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+              <div class="emo-cat-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="8" y1="13" x2="16" y2="13"/>
+                  <line x1="9" y1="9" x2="9.01" y2="9"/>
+                  <line x1="15" y1="9" x2="15.01" y2="9"/>
+                </svg>
+              </div>
               <div class="emo-cat-title">Neutral</div>
               <div class="emo-cat-pct" id="emoNeutralTotal">—%</div>
             </div>
@@ -308,7 +554,7 @@
                 <div class="emo-main-chip" style="--chip-bg:rgba(107,114,128,0.13);--chip-color:#374151">
                   <div class="emo-main-chip-dot" style="background:#6b7280"></div>
                   <div class="emo-main-chip-label">Neutral</div>
-                  <div class="emo-main-chip-pct" id="tagNeutralSubPct">—%</div>
+                  <div class="emo-main-chip-pct" id="tagNeutralSubPct">0%</div>
                 </div>
               </div>
               <div class="emo-tag-list">

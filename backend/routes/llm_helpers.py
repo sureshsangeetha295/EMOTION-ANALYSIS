@@ -1,6 +1,7 @@
 import os
 import requests
 from passlib.context import CryptContext                  # type: ignore[import-untyped]
+from typing import Optional                               # noqa: E402  (re-export for mypy)
 
 # ── Research-grounded 3-tier engagement weights ──────────────────────────────
 #
@@ -84,12 +85,14 @@ class SessionEngagementTracker:
     """
 
     def __init__(self, alpha: float = EMA_ALPHA) -> None:
-        self.alpha:        float                = alpha
-        self.ema:          Optional[float]      = None   # None until first frame
-        self.conf_sum:     float                = 0.0
-        self.weighted_sum: float                = 0.0
-        self.frame_count:  int                  = 0
-        self.tone_counts:  dict[str, int]       = {"positive": 0, "negative": 0, "neutral": 0}
+        self.alpha:          float          = alpha
+        self.ema:            Optional[float]= None   # None until first frame
+        self.conf_sum:       float          = 0.0
+        self.weighted_sum:   float          = 0.0
+        self.frame_count:    int            = 0
+        self.tone_counts:    dict[str, int] = {"positive": 0, "negative": 0, "neutral": 0}
+        # ── NEW: per-emotion frame counter ────────────────────────────────────
+        self.emotion_counts: dict[str, int] = {e: 0 for e in ENGAGEMENT_SCORES}
 
     def update(self, emotion: str, confidence: float = 1.0) -> float:
         """Feed one detection frame. Returns updated EMA score (0.0-1.0)."""
@@ -111,6 +114,10 @@ class SessionEngagementTracker:
         tone = EMOTION_TONE.get(emotion, "neutral")
         self.tone_counts[tone] += 1
 
+        # ── NEW: per-emotion count ────────────────────────────────────────────
+        if emotion in self.emotion_counts:
+            self.emotion_counts[emotion] += 1
+
         return round(self.ema, 4)
 
     @property
@@ -128,12 +135,24 @@ class SessionEngagementTracker:
             "negative": round(self.tone_counts["negative"] / total * 100),
         }
 
+    # ── NEW: per-emotion breakdown as percentages ─────────────────────────────
+    @property
+    def emotion_percentages(self) -> dict[str, int]:
+        """Each emotion as % of total frames. Feeds into LLM prompt to prevent
+        the model from attaching category-total % to individual emotion names."""
+        total = max(1, self.frame_count)
+        return {
+            emotion: round(count / total * 100)
+            for emotion, count in self.emotion_counts.items()
+        }
+
     def summary(self) -> dict[str, object]:
         return {
             "ema_engagement":      round(self.ema or 0.0, 4),
             "confidence_weighted": self.confidence_weighted_score,
             "frame_count":         self.frame_count,
             "tone":                self.tone_percentages,
+            "emotion_pcts":        self.emotion_percentages,   # ← NEW: individual %s
         }
 
 
@@ -288,7 +307,48 @@ def _engagement_time_interpretation(eng_pct: int, total_minutes: int) -> str:
 
 
 # =============================================================================
-#  generate_summary()  —  engagement + time aware
+#  _build_emotion_pcts_block()
+#  Converts per-emotion % dict → clearly labelled prompt block.
+#
+#  ROOT CAUSE OF BUG THIS FIXES:
+#    The old prompt only sent tone category totals (positive/neutral/negative %).
+#    The LLM received dominant="Anger" and neg_pct=26, then hallucinated
+#    "Angry at 26%" — attaching the CATEGORY total to the individual emotion.
+#    Fix: send every emotion's individual % explicitly, labelled with a hard
+#    instruction that these are the ONLY numbers to use per-emotion.
+# =============================================================================
+
+def _build_emotion_pcts_block(emotion_pcts: dict[str, int]) -> str:
+    """
+    Formats per-emotion percentages into a labelled prompt block.
+
+    Example output:
+        Per-emotion breakdown — USE ONLY THESE NUMBERS when citing any single emotion %:
+          Neutral  : 59%
+          Disgust  : 17%
+          Happiness: 7%
+          Surprise : 7%
+          Anger    : 5%
+          Fear     : 2%
+          Sadness  : 2%
+    """
+    if not emotion_pcts:
+        return ""
+
+    # Sort descending so highest-% emotions appear first in the model's context
+    sorted_items = sorted(emotion_pcts.items(), key=lambda x: -x[1])
+
+    lines = [
+        "Per-emotion breakdown — USE ONLY THESE NUMBERS when citing any single emotion %:"
+    ]
+    for emotion, pct in sorted_items:
+        lines.append(f"  {emotion:<10}: {pct}%")
+
+    return "\n".join(lines) + "\n"
+
+
+# =============================================================================
+#  generate_summary()  —  FIXED v2
 # =============================================================================
 
 def generate_summary(session_data: dict) -> str:
@@ -296,6 +356,15 @@ def generate_summary(session_data: dict) -> str:
     Generates a chat-style session summary via Groq — EMA engagement only.
     No timestamps, no duration math, no 'time-based' coaching.
     Talks directly to the learner like a real coach would after watching them.
+
+    FIX v2 — per-emotion % injected into prompt:
+        session_data now accepts an optional 'emotion_pcts' key (dict[str, int])
+        containing each emotion's individual frame %. These are surfaced in the
+        prompt as a clearly labelled block so the LLM never confuses the
+        aggregate tone-category % with individual emotion %.
+
+        Before fix: LLM said "Angry at 26%" (26% = negative CATEGORY total).
+        After fix:  LLM says "Angry at 5%"  (5%  = Anger's actual individual %).
     """
     api_key = os.getenv("GROQ_API_KEY", "").strip()
     if not api_key:
@@ -308,13 +377,17 @@ def generate_summary(session_data: dict) -> str:
     dominant    = session_data.get("dominantEmotion", "Neutral")
     dom_profile = _dominant_emotion_profile(dominant)
 
-    # Tone breakdown from tracker (pos/neg/neutral % of frames)
+    # Tone category totals (pos/neg/neutral % of all frames)
     tone    = session_data.get("tone", {})
     pos_pct = tone.get("positive", 0)
     neg_pct = tone.get("negative", 0)
     neu_pct = tone.get("neutral",  0)
 
-    # Determine conversational engagement label
+    # ── FIX: individual per-emotion percentages ───────────────────────────────
+    emotion_pcts: dict[str, int] = session_data.get("emotion_pcts", {})
+    emotion_pcts_block = _build_emotion_pcts_block(emotion_pcts)
+
+    # Conversational engagement label
     if eng_pct >= 75:
         eng_read = f"strong — you were clearly in the zone at {eng_pct}%"
     elif eng_pct >= 55:
@@ -330,33 +403,70 @@ def generate_summary(session_data: dict) -> str:
         "You detected their facial emotions frame by frame and computed an EMA engagement score — "
         "a recency-weighted score where recent frames matter more than older ones. "
         "It reflects WHERE the learner ended up, not just a flat average.\n\n"
+
         "Write a short, warm, CHAT-STYLE message directly to the learner — like a coach texting "
         "feedback after a session. No headers. No bullet points. No sections. No timestamps. "
         "No references to session duration or time. Just 3-4 natural sentences.\n\n"
+
         "Structure (write as flowing prose, NOT labelled):\n"
         "  1. One honest sentence about how engaged they were (use the EMA score naturally).\n"
         "  2. One sentence about what their dominant emotion says about them right now.\n"
         "  3. One concrete, specific action they can take before their next session.\n"
         "  4. One short encouraging closer.\n\n"
+
         "Rules:\n"
         "- Never mention timestamps, duration, minutes, or seconds.\n"
         "- Never say 'session data', 'timeline', 'refer to', or 'see details'.\n"
         "- Never use headers like SESSION SNAPSHOT or COACH TIP.\n"
         "- Write like a real human coach, not a report generator.\n"
-        "- Keep it under 80 words total."
+        "- Keep it under 80 words total.\n"
+        # ── CRITICAL accuracy rule (v2) ───────────────────────────────────────
+        "- CRITICAL: When you mention a specific emotion by name alongside a percentage, "
+        "you MUST use ONLY the exact number listed under 'Per-emotion breakdown' in the "
+        "user message. NEVER use the positive/neutral/negative CATEGORY totals as the % "
+        "for any individual emotion. "
+        "Example: if Anger is 5% and the negative category total is 26%, "
+        "say 'Angry at 5%' — NEVER 'Angry at 26%'.\n"
     )
 
-    user_msg = (
+    # ── Build user_msg ────────────────────────────────────────────────────────
+    #
+    #  Block order (most specific → most aggregate):
+    #    1. Per-emotion %  — individual, labelled with usage instruction  ← NEW FIRST
+    #    2. EMA / band / dominant
+    #    3. Tone category totals — explicitly named as CATEGORY sums
+    #    4. Coaching direction + final instruction
+    #
+    #  Putting per-emotion FIRST means the LLM sees the exact numbers before
+    #  it ever reads the aggregate totals, eliminating the confusion.
+
+    user_msg_parts: list[str] = []
+
+    if emotion_pcts_block:
+        user_msg_parts.append(emotion_pcts_block)
+
+    user_msg_parts.append(
         f"EMA Engagement   : {eng_pct}% — {eng_read}\n"
         f"Engagement Band  : {band} {emoji}\n"
         f"Dominant Emotion : {dominant} ({dom_profile})\n"
-        + (
-            f"Tone Breakdown   : {pos_pct}% positive / {neu_pct}% neutral / {neg_pct}% negative\n"
-            if tone else ""
-        )
-        + f"\nCoaching direction: {coaching}\n\n"
-        "Write the chat-style message now. Remember: no headers, no timestamps, no sections, under 80 words."
     )
+
+    if tone:
+        user_msg_parts.append(
+            "Tone Category Totals (CATEGORY sums only — do NOT cite these as individual emotion %):\n"
+            f"  Positive category : {pos_pct}%\n"
+            f"  Neutral  category : {neu_pct}%\n"
+            f"  Negative category : {neg_pct}%\n"
+        )
+
+    user_msg_parts.append(
+        f"Coaching direction: {coaching}\n\n"
+        "Write the chat-style message now. "
+        "No headers, no timestamps, no sections, under 80 words. "
+        "If citing any emotion %, use ONLY the Per-emotion breakdown numbers above."
+    )
+
+    user_msg = "\n".join(user_msg_parts)
 
     url     = "https://api.groq.com/openai/v1/chat/completions"
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
@@ -391,7 +501,3 @@ def generate_summary(session_data: dict) -> str:
 # =============================================================================
 
 pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-# Add type alias so callers can import it if needed
-from typing import Optional  # noqa: E402  (re-export for mypy)

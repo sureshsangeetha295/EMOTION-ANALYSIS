@@ -147,7 +147,7 @@ function applyDetectionResult(backendEmotion,conf,engagement,probs,emaFromServer
   const tierEl=document.getElementById('engageTierLabel');
   if(tierEl){tierEl.textContent=tier.label;tierEl.style.color=tier.color;}
   updateEngageLegend();
-  if(probs){showDistGraph();updateTrendGraph(probs,spike?_frameCount:null);}
+  if(probs){showDistGraph();updateTrendGraph(probs,spike?_frameCount:null,spike?draftKey:null);}
   updateEmotionBars();updateDominantChips();
   _broadcast({type:'detection',emotion:draftKey,conf,engagement:engagementScore,probs,
     emotionCounts:{...emotionCounts},totalDetected,sessionTime:sessionTime(),
