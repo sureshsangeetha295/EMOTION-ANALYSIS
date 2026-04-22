@@ -397,9 +397,18 @@
         <div id="distGraphArea" style="display:none;flex-direction:column">
           <div class="dist-graph-wrap" style="position:relative">
             <div class="dist-hover-tip" id="distHoverTip"></div>
-            <div class="dist-graph-canvas-wrap">
-              <canvas id="distTrendCanvas"></canvas>
+            <!-- Wrapper gives position context for the absolute Y-axis overlay -->
+            <div style="position:relative">
+              <!-- Scrollable plot canvas -->
+              <div class="dist-graph-canvas-wrap">
+                <canvas id="distTrendCanvas"></canvas>
+              </div>
+              <!-- Y-axis overlay: absolutely anchored to left edge, never scrolls -->
+              <canvas id="distYAxisCanvas"
+                style="position:absolute;top:0;left:0;z-index:2;pointer-events:none;display:block"></canvas>
             </div>
+            <!-- X-axis title: static, offset past Y-axis width -->
+            <div style="text-align:center;font-size:9px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:rgba(140,135,130,0.58);padding:4px 0 2px;font-family:'Plus Jakarta Sans',sans-serif;margin-left:70px">Time (elapsed)</div>
           </div>
         </div>
       </div>

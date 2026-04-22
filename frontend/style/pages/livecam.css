@@ -163,7 +163,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px
   position:relative;
 }
 
-/* Scrollable canvas container — INVISIBLE scrollbar, enough height for labels */
+/* Scrollable canvas container — thin orange scrollbar so users can drag back through history */
 .dist-graph-canvas-wrap{
   position:relative;
   width:100%;
@@ -171,12 +171,27 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:0 24px
   height:220px;
   overflow-x:auto;
   overflow-y:hidden;
-  /* Hide scrollbar in all browsers */
-  scrollbar-width:none;
-  -ms-overflow-style:none;
+  /* Show a thin scrollbar so users can manually scroll back through
+     history while the graph auto-advances to the right during live
+     detection (JS handles auto-scroll via double-rAF). */
+  scrollbar-width:thin;                               /* Firefox */
+  scrollbar-color:rgba(232,68,10,0.35) transparent;  /* Firefox thumb / track */
+  -ms-overflow-style:auto;                            /* IE/Edge legacy */
 }
+/* Webkit (Chrome, Safari, new Edge) */
 .dist-graph-canvas-wrap::-webkit-scrollbar{
-  display:none;
+  display:block !important;
+  height:4px;
+}
+.dist-graph-canvas-wrap::-webkit-scrollbar-track{
+  background:transparent;
+}
+.dist-graph-canvas-wrap::-webkit-scrollbar-thumb{
+  background:rgba(232,68,10,0.30);
+  border-radius:2px;
+}
+.dist-graph-canvas-wrap::-webkit-scrollbar-thumb:hover{
+  background:rgba(232,68,10,0.55);
 }
 
 /* Canvas itself — block, never collapses */

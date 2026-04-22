@@ -85,7 +85,6 @@ function updateDominantChips(){
   container.innerHTML=sorted.map(([k,v])=>`<span class="dom-chip ${k}">${EMOTION_LABELS[k]||k} ${Math.round(v/total*100)}%</span>`).join('');
 }
 
-// ── Detection result ──
 // ── Adaptive EMA alpha ──────────────────────────────────────────────────
 // Alpha adapts based on two signals:
 //   1. Confidence: high-confidence detections react faster (higher alpha)
