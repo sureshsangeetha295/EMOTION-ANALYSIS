@@ -43,49 +43,12 @@ _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 
 _ENV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 
-print(f"[EmotionAI] Looking for .env at: {_ENV_PATH}")
-if not os.path.exists(_ENV_PATH):
-    print("[EmotionAI] ERROR: .env file NOT FOUND at that path.")
-else:
-    print("[EmotionAI] .env file found. Checking for common formatting issues...")
-    try:
-        raw_lines = open(_ENV_PATH, encoding="utf-8-sig").readlines()
-    except UnicodeDecodeError:
-        raw_lines = open(_ENV_PATH, encoding="latin-1").readlines()
-    for i, line in enumerate(raw_lines, 1):
-        stripped = line.rstrip("\r\n")
-        if stripped and not stripped.startswith("#"):
-            if "=" not in stripped:
-                print(f"[EmotionAI]   Line {i}: MISSING '=' -> {stripped!r}")
-            elif stripped.startswith(" ") or stripped.startswith("\t"):
-                print(f"[EmotionAI]   Line {i}: LEADING WHITESPACE -> {stripped!r}")
-            else:
-                key = stripped.split("=", 1)[0].strip()
-                val = stripped.split("=", 1)[1].strip() if "=" in stripped else ""
-                masked = val[:6] + "..." if len(val) > 6 else ("(empty)" if not val else val)
-                print(f"[EmotionAI]   Line {i}: {key} = {masked}")
+
 
 load_dotenv(dotenv_path=_ENV_PATH, override=True)
 
 _GROQ_KEY = os.getenv("GROQ_API_KEY", "").strip()
-if not _GROQ_KEY:
-    print(
-        "\n[EmotionAI] WARNING: GROQ_API_KEY is not set.\n"
-        f"  Looked for .env at: {_ENV_PATH}\n"
-        "  Add  GROQ_API_KEY=gsk_...  to that file and restart.\n"
-        "  Common causes:\n"
-        "    - The .env file has Windows BOM encoding (save as UTF-8 without BOM)\n"
-        "    - Value has quotes: GROQ_API_KEY=\"gsk_...\" -> remove the quotes\n"
-        "    - Extra spaces:    GROQ_API_KEY = gsk_...  -> use GROQ_API_KEY=gsk_...\n"
-        "    - Wrong filename:  .env.txt instead of .env\n"
-    )
-
 _DB_PASS = os.getenv("DB_PASSWORD", "")
-if not _DB_PASS:
-    print(
-        "\n[EmotionAI] WARNING: DB_PASSWORD is not set.\n"
-        "  Add  DB_PASSWORD=your_postgres_password  to your .env file.\n"
-    )
 
 APP_HOST     = os.getenv("APP_HOST", "0.0.0.0")
 APP_PORT     = int(os.getenv("APP_PORT", "8000"))
@@ -479,7 +442,6 @@ def generate_summary(session_data: dict) -> str:
     try:
         res  = requests.post(url, headers=headers, json=payload, timeout=20)
         data = res.json()
-        print("[EmotionAI] generate_summary GROQ response:", data)
         return data["choices"][0]["message"]["content"]
     except Exception as e:
         print(f"[EmotionAI] generate_summary error: {e}")
@@ -717,17 +679,13 @@ def init_db():
             "INSERT INTO users (username, email, password_hash, is_admin) VALUES (%s,%s,%s,TRUE)",
             (ADMIN_USERNAME, admin_email_clean, hash_password(ADMIN_PASSWORD))
         )
-        print(f"[EmotionAI] Default admin created -> email: {admin_email_clean}")
-        print("[EmotionAI] Please change the admin password after first login!")
     else:
         cur.execute(
             "UPDATE users SET password_hash=%s, email=%s WHERE id=%s",
             (hash_password(ADMIN_PASSWORD), admin_email_clean, existing_admin[0])
         )
-        print(f"[EmotionAI] Admin credentials synced -> email: {admin_email_clean}")
 
     con.commit(); cur.close(); con.close()
-    print("[EmotionAI] Database initialised")
 
 
 # =============================================================================
@@ -741,9 +699,8 @@ async def lifespan(app: FastAPI):
         import testing
         testing.get_haar_detector()
         testing.get_model()
-        print("[EmotionAI] Preload complete")
     except Exception as e:
-        print(f"[EmotionAI] Preload error (non-fatal): {e}")
+        pass
     webbrowser.open(f"http://localhost:{APP_PORT}")
     yield
 
@@ -1712,7 +1669,6 @@ async def generate_insights(body: InsightsRequest, current: dict = Depends(get_c
                 for i, t in enumerate(titles[:3])
             ]
             if insights: return {"insights": insights}
-        print(f"[EmotionAI] /generate-insights: all parse strategies failed. Raw:\n{raw}")
         return {"insights": [
             {"title": "EMA reading",       "desc": f"{eng_pct}% EMA engagement — {eng_verdict}."},
             {"title": "Emotion signal",    "desc": f"{dominant} dominated ({pos_pct}% positive, {neg_pct}% negative)."},
@@ -1729,13 +1685,9 @@ async def generate_insights(body: InsightsRequest, current: dict = Depends(get_c
     try:
         res = requests.post(url, headers=headers, json=payload, timeout=20)
         if not res.ok:
-            try:    err_body = res.json()
-            except: err_body = {}
-            print(f"[EmotionAI] /generate-insights Groq HTTP {res.status_code}: {err_body}")
             return _static_fallback()
         data     = res.json()
         raw_text = data["choices"][0]["message"]["content"]
-        print(f"[EmotionAI] /generate-insights raw LLM output: {raw_text!r}")
         return _extract_insights(raw_text)
     except Exception as e:
         print(f"[EmotionAI] /generate-insights error: {e}")
@@ -2239,7 +2191,7 @@ if not FRONTEND_DIR:
         "  Expected one of: frontend / Frontend / front-end / Front-End\n"
     )
 
-print(f"[EmotionAI] Frontend: {FRONTEND_DIR}")
+
 
 
 @app.get("/")

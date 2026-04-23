@@ -39,12 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!token) return;
 
   // Swap hero CTA to Launch App
-  var heroBtn = document.querySelector('.hero-ctas .btn-primary');
-  if (heroBtn) {
-    heroBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>Detect';
-    heroBtn.href = '#';
-    heroBtn.onclick = launchApp;
-  }
+  /* Hero btn stays as-is (scrolls to #how) — CTA section handles detect navigation */
   // Swap logout button
   var navActions = document.querySelector('.nav-actions');
   if (navActions) {
@@ -98,6 +93,20 @@ function cycleMock(){
     document.getElementById('bp'+i).textContent=p+'%';
   });
   document.getElementById('mock-mouth').setAttribute('d',e.mouth);
+  /* Update realtime inference card bars */
+  const rtColors=['#f59e0b','#6b7280','#3b82f6','#ef4444','#f97316','#8b5cf6','#06b6d4'];
+  const rtOrder=[3,4,0,1,2,5,6]; /* map EMOTIONS.probs indices to rt bar order: happy,neutral,sad,angry,surprise,fear,disgust */
+  const rtProbs=[e.probs[3],e.probs[4],e.probs[0],e.probs[1],e.probs[2],e.probs[5],e.probs[6]];
+  rtProbs.forEach((p,i)=>{
+    const b=document.getElementById('rt-b'+i);
+    const s=document.getElementById('rt-p'+i);
+    if(b)b.style.width=p+'%';
+    if(s)s.textContent=p+'%';
+  });
+  const rtEmo=document.getElementById('rt-emotion');
+  const rtMs=document.getElementById('rt-ms');
+  if(rtEmo){rtEmo.textContent=e.name;rtEmo.style.color=e.color;}
+  if(rtMs)rtMs.textContent=e.ms+'ms';
   document.getElementById('mock-brow-l').setAttribute('d',e.browL);
   document.getElementById('mock-brow-r').setAttribute('d',e.browR);
 }

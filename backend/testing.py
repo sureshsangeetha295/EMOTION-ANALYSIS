@@ -33,11 +33,9 @@ def get_model():
     if _model is None:                       # fast path — no lock overhead
         with _model_lock:                    # slow path — serialise loading
             if _model is None:               # double-checked locking
-                print("[EmotionAI] Loading model...")
                 _model = tf.keras.models.load_model(MODEL_PATH, compile=False)
                 dummy  = np.zeros((1, 224, 224, 3), dtype="float32")
                 _model.predict(dummy, verbose=0)
-                print("[EmotionAI] Model loaded and warmed up")
     return _model
 
 
@@ -46,13 +44,11 @@ def get_haar_detector():
     if _haar_detector is None:
         with _haar_lock:
             if _haar_detector is None:
-                print("[EmotionAI] Loading Haar Cascade...")
                 path = os.path.join(
                     cv2.data.haarcascades,                        # type: ignore
                     "haarcascade_frontalface_default.xml"
                 )
                 _haar_detector = cv2.CascadeClassifier(path)
-                print("[EmotionAI] Haar Cascade ready")
     return _haar_detector
 
 
@@ -61,10 +57,8 @@ def get_mtcnn():
     if _mtcnn is None:
         with _mtcnn_lock:
             if _mtcnn is None:
-                print("[EmotionAI] Loading MTCNN (slow on CPU)...")
                 from mtcnn import MTCNN
                 _mtcnn = MTCNN()
-                print("[EmotionAI] MTCNN ready")
     return _mtcnn
 
 

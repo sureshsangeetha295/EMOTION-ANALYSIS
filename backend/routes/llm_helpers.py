@@ -483,7 +483,6 @@ def generate_summary(session_data: dict) -> str:
     try:
         res  = requests.post(url, headers=headers, json=payload, timeout=20)
         data = res.json()
-        print("[EmotionAI] generate_summary GROQ response:", data)
         return data["choices"][0]["message"]["content"]
     except Exception as e:
         print(f"[EmotionAI] generate_summary error: {e}")

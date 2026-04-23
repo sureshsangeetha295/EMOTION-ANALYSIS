@@ -23,9 +23,8 @@ async def lifespan(app: FastAPI):
         import testing
         testing.get_haar_detector()
         testing.get_model()
-        print("[EmotionAI] Preload complete")
-    except Exception as e:
-        print(f"[EmotionAI] Preload error (non-fatal): {e}")
+    except Exception:
+        pass
     webbrowser.open(f"http://localhost:{APP_PORT}")
     yield
 

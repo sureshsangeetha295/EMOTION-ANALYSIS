@@ -1,3 +1,13 @@
+from __future__ import annotations
+import os
+
+import requests
+from fastapi import Depends, HTTPException
+
+from routes.app_setup import app, get_current_user, InsightsRequest
+from routes.llm_helpers import _engagement_band, _parse_emotion_pcts, _dominant_emotion_profile
+
+
 @app.post("/generate-insights")
 async def generate_insights(body: InsightsRequest, current: dict = Depends(get_current_user)):
     """Use Groq to generate 3 structured insight blocks — EMA engagement only, no time references."""
@@ -131,7 +141,6 @@ async def generate_insights(body: InsightsRequest, current: dict = Depends(get_c
             ]
             if insights: return {"insights": insights}
 
-        print(f"[EmotionAI] /generate-insights: all parse strategies failed. Raw:\n{raw}")
         return {"insights": [
             {"title": "EMA reading",       "desc": f"{eng_pct}% EMA engagement — {eng_verdict}."},
             {"title": "Emotion signal",    "desc": f"{dominant} dominated ({pos_pct}% positive, {neg_pct}% negative)."},
@@ -148,13 +157,9 @@ async def generate_insights(body: InsightsRequest, current: dict = Depends(get_c
     try:
         res = requests.post(url, headers=headers, json=payload, timeout=20)
         if not res.ok:
-            try:    err_body = res.json()
-            except: err_body = {}
-            print(f"[EmotionAI] /generate-insights Groq HTTP {res.status_code}: {err_body}")
             return _static_fallback()
         data     = res.json()
         raw_text = data["choices"][0]["message"]["content"]
-        print(f"[EmotionAI] /generate-insights raw LLM output: {raw_text!r}")
         return _extract_insights(raw_text)
     except Exception as e:
         print(f"[EmotionAI] /generate-insights error: {e}")
@@ -164,4 +169,3 @@ async def generate_insights(body: InsightsRequest, current: dict = Depends(get_c
 # =============================================================================
 #  /session-end
 # =============================================================================
-

@@ -1,3 +1,35 @@
+from __future__ import annotations
+import os
+import json
+from typing import Optional
+
+import uvicorn
+from fastapi import Depends, HTTPException, Request
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+
+from routes.app_setup import (
+    app,
+    get_current_user,
+    get_admin_user,
+    SessionEndRequest,
+    SummaryRequest,
+    FeedbackRequest,
+    FaqFeedbackRequest,
+    AdminCreateUserRequest,
+)
+from routes.auth_helpers import db_conn, fetchone, fetchall, decode_token, hash_password, validate_password_strength, validate_username
+from routes.llm_helpers import generate_summary
+from routes.config import APP_HOST, APP_PORT
+
+# SessionEngagementTracker is defined in main.py and injected at runtime;
+# import it here only for type-checking purposes
+try:
+    from __main__ import SessionEngagementTracker, _active_sessions
+except ImportError:
+    pass  # will be available at runtime via main.py
+
+
 @app.post("/session-end")
 async def session_end(body: SessionEndRequest, current: dict = Depends(get_current_user)):
     _active_sessions.pop(current["id"], None)
@@ -397,7 +429,7 @@ if not FRONTEND_DIR:
         "  Expected one of: frontend / Frontend / front-end / Front-End\n"
     )
 
-print(f"[EmotionAI] Frontend: {FRONTEND_DIR}")
+
 
 
 @app.get("/")

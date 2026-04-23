@@ -29,7 +29,7 @@ def init_db():
         try:
             cur.execute(_col_sql); con.commit()
         except Exception as _e:
-            con.rollback(); print(f"[EmotionAI] users migration skipped: {_e}")
+            con.rollback()  # users migration skipped
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS detections (
@@ -86,7 +86,7 @@ def init_db():
         try:
             cur.execute(_sql); con.commit()
         except Exception as _e:
-            con.rollback(); print(f"[EmotionAI] feedback migration skipped: {_e}")
+            con.rollback()  # feedback migration skipped
     cur.execute("CREATE INDEX IF NOT EXISTS idx_fb_user    ON feedback(user_id)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_fb_created ON feedback(created_at)")
 
@@ -131,14 +131,10 @@ def init_db():
             "INSERT INTO users (username, email, password_hash, is_admin) VALUES (%s,%s,%s,TRUE)",
             (ADMIN_USERNAME, admin_email_clean, hash_password(ADMIN_PASSWORD))
         )
-        print(f"[EmotionAI] Default admin created -> email: {admin_email_clean}")
-        print("[EmotionAI] Please change the admin password after first login!")
     else:
         cur.execute(
             "UPDATE users SET password_hash=%s, email=%s WHERE id=%s",
             (hash_password(ADMIN_PASSWORD), admin_email_clean, existing_admin[0])
         )
-        print(f"[EmotionAI] Admin credentials synced -> email: {admin_email_clean}")
 
     con.commit(); cur.close(); con.close()
-    print("[EmotionAI] Database initialised")
