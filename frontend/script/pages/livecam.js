@@ -344,6 +344,69 @@ async function doStop(){
   _broadcast({type:'session_stop'});
 }
 
+
+// ── Session resume (after network restore) ──
+async function doResume(){
+  try{
+    const snap=window.__eaSnapshot;
+    const stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+    const v=document.getElementById('videoEl');v.srcObject=stream;v.style.display='block';
+    document.getElementById('camIdle').style.display='none';
+    document.getElementById('camFps').style.display='block';
+    document.getElementById('camFaceBox').classList.add('show');
+    document.getElementById('camRing').classList.add('active');
+    document.getElementById('camScan').classList.add('active');
+    document.getElementById('camStatusDot').className='cam-status-dot live';
+    document.getElementById('camStatusTxt').textContent='LIVE';
+    document.getElementById('reactionBar').classList.add('show');
+    document.getElementById('liveFeedChip').style.display='flex';
+    document.getElementById('navLiveBadge').style.display='flex';
+
+    // Restore all state from snapshot
+    if(snap){
+      _frameCount=snap._frameCount;
+      _engagementScores=snap._engagementScores;
+      _sessionId=snap._sessionId;
+      engagementScore=snap.engagementScore;
+      lastEmotion=snap.lastEmotion;
+      totalDetected=snap.totalDetected;
+      emotionCounts={...snap.emotionCounts};
+      reactionCount=snap.reactionCount;
+      peakConf=snap.peakConf;
+      lastEmotionKey=snap.lastEmotionKey;
+      emotionChangeCooldown=snap.emotionChangeCooldown;
+      TREND_HISTORY.length=0;
+      snap.TREND_HISTORY.forEach(x=>TREND_HISTORY.push(x));
+      timelineEvents=[...snap.timelineEvents];
+      _spikeCount=snap._spikeCount;
+      _spikeFrames=[...snap._spikeFrames];
+      // Restore session timer offset so duration continues from where it left off
+      sessionStart=Date.now()-(snap.elapsedMs||0);
+    }
+
+    isLive=true;detectionInProgress=false;
+
+    // Restore UI to reflect saved state
+    updateEmotionBars();
+    updateDominantChips();
+    updateSpikeCounter();
+    renderTimeline();
+    addTimelineEvent('Session resumed — connection restored','🔄','start');
+
+    sessionTimer=setInterval(tickTimer,1000);
+    document.getElementById('btnStart').disabled=true;
+    document.getElementById('btnStop').disabled=false;
+
+    window.__eaSnapshot=null;
+    window.__eaDetectionWasLive=false;
+    scheduleLive();
+  }catch(e){
+    console.error('[EmotionAI] Resume error:',e);
+    // Fall back to fresh start if resume fails
+    doStart();
+  }
+}
+
 // ── Init ──
 if(typeof Auth!=='undefined'&&!Auth.requireAuth())throw new Error('Not authenticated');
 window.addEventListener('load',()=>{

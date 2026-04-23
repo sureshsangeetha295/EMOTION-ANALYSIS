@@ -171,14 +171,21 @@
     .ea-ov-retry svg { width:14px; height:14px; }
     .ea-ov-retry.ea-spinning svg { animation: ea-spin .75s linear infinite; }
 
-    .ea-ov-howbtn {
-      background: transparent; color: #1a1a1a;
-      border: 1.5px solid #ccc; border-radius: 99px;
-      padding: 11px 20px; font-size: 13.5px;
+
+    .ea-ov-resume {
+      display: none;
+      align-items: center; gap: 8px;
+      background: #16a34a; color: #fff;
+      border: none; border-radius: 99px;
+      padding: 11px 22px; font-size: 13.5px; font-weight: 600;
       cursor: pointer; font-family: inherit;
-      transition: border-color .2s;
+      transition: background .2s, transform .12s;
+      animation: ea-fadein .4s ease;
     }
-    .ea-ov-howbtn:hover { border-color: #999; }
+    .ea-ov-resume.ea-show { display: inline-flex; }
+    .ea-ov-resume:hover { background: #15803d; }
+    .ea-ov-resume:active { transform: scale(.97); }
+    .ea-ov-resume svg { width:14px; height:14px; }
 
     /* Right cam card */
     .ea-ov-right { width: 300px; flex-shrink: 0; }
@@ -461,7 +468,13 @@
               </svg>
               <span id="ea-ov-retry-label">Retry Connection</span>
             </button>
-            <button class="ea-ov-howbtn" onclick="window.__eaOvHow()">How it works</button>
+            <button class="ea-ov-resume" id="ea-ov-resume-btn" onclick="window.__eaOvResume()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              Resume Detection
+            </button>
           </div>
         </div>
 
@@ -649,31 +662,17 @@
       if (emoName)    emoName.textContent = 'Reconnected';
       if (feedLabel)  feedLabel.textContent = 'RECONNECTED';
 
-      /* Retry button — hide it */
-      const retryBtn = document.getElementById('ea-ov-retry-btn');
+      /* Swap buttons: hide Retry + How it works */
+      const retryBtn  = document.getElementById('ea-ov-retry-btn');
+      const resumeBtn = document.getElementById('ea-ov-resume-btn');
       if (retryBtn) retryBtn.style.display = 'none';
-
-      setTimeout(() => {
-        ov.classList.remove('ea-show', 'ea-restored');
-        /* Reset everything back for next time */
-        if (h1)  h1.textContent  = 'No Internet';
-        if (sub) { sub.textContent = 'Connection.'; sub.style.fontStyle = ''; }
-        if (desc) desc.textContent = 'EmotionAI couldn\'t reach the server. Live facial analysis requires an active connection. Check your network and retry.';
-        if (badge) badge.textContent = 'No connection · Detection paused · Offline';
-        if (emoName) emoName.textContent = 'Offline';
-        if (retryBtn) retryBtn.style.display = '';
-        ov.querySelectorAll('.ea-ov-check-row').forEach((row, i) => {
-          if (i === 0) return; /* Keep device row as ✓ */
-          row.classList.add('fail');
-          const icon = row.querySelector('.ea-ov-check-ok');
-          if (icon) { icon.textContent = '✕'; icon.className = 'ea-ov-check-fail'; }
-          const span = row.querySelector('span:last-child');
-          if (span) {
-            if (i === 1) span.textContent = 'No internet access detected';
-            if (i === 2) span.textContent = 'Server unreachable';
-          }
-        });
-      }, 1800);
+      if (window.__eaDetectionWasLive) {
+        /* Livecam was active — show Resume button, keep overlay open for user to act */
+        if (resumeBtn) resumeBtn.classList.add('ea-show');
+      } else {
+        /* Non-livecam page (FAQ, Feedback etc.) — just close overlay after green flash */
+        setTimeout(() => resetOverlayState(), 1800);
+      }
     } else {
       ov.classList.remove('ea-show');
     }
@@ -812,13 +811,90 @@
     window.location.href = 'login.html';
   };
 
-  /* ── How it works (navigate) ────────────────────────────────────────────── */
-  window.__eaOvHow = function () {
-    window.location.href = 'faq.html';
+  /* ── Reset overlay back to offline state ───────────────────────────────── */
+  function resetOverlayState() {
+    const ov = document.getElementById('ea-offline-overlay');
+    if (!ov) return;
+    ov.classList.remove('ea-show', 'ea-restored');
+
+    const h1      = ov.querySelector('.ea-ov-h1');
+    const sub     = document.getElementById('ea-ov-subtitle');
+    const desc    = document.getElementById('ea-ov-desc');
+    const badge   = document.getElementById('ea-ov-badge-text');
+    const emoName = ov.querySelector('.ea-ov-emo-name');
+    const retryBtn  = document.getElementById('ea-ov-retry-btn');
+    const resumeBtn = document.getElementById('ea-ov-resume-btn');
+
+    if (h1)  h1.textContent  = 'No Internet';
+    if (sub) { sub.textContent = 'Connection.'; sub.style.fontStyle = ''; }
+    if (desc) desc.textContent = "EmotionAI couldn't reach the server. Live facial analysis requires an active connection. Check your network and retry.";
+    if (badge) badge.textContent = 'No connection · Detection paused · Offline';
+    if (emoName) emoName.textContent = 'Offline';
+
+    if (retryBtn)  retryBtn.style.display  = '';    if (resumeBtn) resumeBtn.classList.remove('ea-show');
+
+    ov.querySelectorAll('.ea-ov-check-row').forEach((row, i) => {
+      if (i === 0) return;
+      row.classList.add('fail');
+      const icon = row.querySelector('.ea-ov-check-ok');
+      if (icon) { icon.textContent = '✕'; icon.className = 'ea-ov-check-fail'; }
+      const span = row.querySelector('span:last-child');
+      if (span) {
+        if (i === 1) span.textContent = 'No internet access detected';
+        if (i === 2) span.textContent = 'Server unreachable';
+      }
+    });
+  }
+
+  /* ── Resume button handler ──────────────────────────────────────────────── */
+  window.__eaOvResume = async function () {
+    resetOverlayState();
+    /* If on livecam page, call doResume() to continue the session */
+    try {
+      if (typeof doResume === 'function' && window.__eaDetectionWasLive) {
+        await doResume(); /* restores snapshot state */
+      } else if (typeof doStart === 'function') {
+        await doStart(); /* fallback for non-livecam pages */
+      }
+    } catch (_) {}
   };
+
+  /* ── Livecam pause / resume hooks ──────────────────────────────────────── */
+  function pauseDetection() {
+    try {
+      if (typeof isLive !== 'undefined' && isLive && typeof doStop === 'function') {
+        /* Snapshot all state BEFORE doStop() clears _sessionId/_frameCount etc. */
+        window.__eaSnapshot = {
+          _frameCount:          _frameCount,
+          _engagementScores:    [..._engagementScores],
+          _sessionId:           _sessionId,
+          engagementScore:      engagementScore,
+          lastEmotion:          lastEmotion,
+          totalDetected:        totalDetected,
+          emotionCounts:        {...emotionCounts},
+          reactionCount:        reactionCount,
+          peakConf:             peakConf,
+          lastEmotionKey:       lastEmotionKey,
+          emotionChangeCooldown:emotionChangeCooldown,
+          TREND_HISTORY:        [...TREND_HISTORY],
+          timelineEvents:       [...timelineEvents],
+          _spikeCount:          _spikeCount,
+          _spikeFrames:         [..._spikeFrames],
+          elapsedMs:            sessionStart ? Date.now() - sessionStart : 0,
+        };
+        window.__eaDetectionWasLive = true;
+        doStop();
+      }
+    } catch (_) {}
+  }
+
+  function resumeDetection() {
+    /* Resume btn on the overlay handles livecam restart — nothing extra needed here */
+  }
 
   /* ── Online / Offline events ────────────────────────────────────────────── */
   async function handleOffline() {
+    pauseDetection();
     if (isPostLogin()) showOverlay();
     else               showBanner('offline');
     startCheckInterval();
@@ -827,7 +903,7 @@
   async function handleOnline() {
     const { ok, slow } = await pingServer();
     if (isPostLogin()) {
-      if (ok) hideOverlay(true);
+      if (ok) { hideOverlay(true); resumeDetection(); }
     } else {
       if (ok && !slow)    hideBanner(true);
       else if (ok && slow) showBanner('weak');
