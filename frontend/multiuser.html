@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f97316' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='9' cy='7' r='4'/%3E%3Cpath d='M23 21v-2a4 4 0 0 0-3-3.87'/%3E%3Cpath d='M16 3.13a4 4 0 0 1 0 7.75'/%3E%3C/svg%3E"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>EmotionAI — Multi-User</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,300;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style/pages/livecam.css"/>
+<style>
+/* ── Detect Dropdown ── */
+.nav-dropdown{position:relative;list-style:none}
+.nav-dropdown-trigger{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--text2);text-decoration:none;font-weight:500;cursor:pointer;background:none;border:none;padding:0;font-family:inherit;transition:color 0.15s}
+.nav-dropdown-trigger:hover,.nav-dropdown-trigger.active{color:var(--accent)}
+.nav-dropdown-trigger svg.chevron{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;transition:transform 0.2s}
+.nav-dropdown.open .nav-dropdown-trigger svg.chevron{transform:rotate(180deg)}
+.nav-dropdown-menu{display:none;position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%);background:#ffffff;border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:6px;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,0.10);z-index:1000;flex-direction:column;gap:2px}
+.nav-dropdown.open .nav-dropdown-menu{display:flex}
+.nav-dropdown-menu a{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:7px;font-size:12px;font-weight:500;color:#374151;text-decoration:none;transition:background 0.15s,color 0.15s;white-space:nowrap}
+.nav-dropdown-menu a:hover{background:rgba(249,115,22,0.07);color:var(--accent,#f97316)}
+.nav-dropdown-menu a.active{color:var(--accent,#f97316)}
+.nav-dropdown-menu a svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+/* ── cam box overlay ── */
+#mu_canvasOverlay{
+  position:absolute;inset:0;width:100%;height:100%;
+  pointer-events:none;z-index:6;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   STACKED HISTOGRAM
+   ═══════════════════════════════════════════════════════════════════ */
+.dist-histogram-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 320px;
+  overflow: hidden;
+}
+.dist-histogram-card .card-body {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.dist-hist-title {
+  padding: 12px 16px 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.dist-hist-title-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dist-hist-title svg {
+  width: 13px; height: 13px;
+  stroke: var(--accent); fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.dist-hist-hint { font-size: 9px; color: var(--text3); font-weight: 500; }
+
+.dist-hist-outer {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 8px 8px 0 8px;
+  position: relative;
+}
+
+.dist-hist-y-col {
+  flex-shrink: 0;
+  width: 46px;
+  display: flex;
+  flex-direction: column;
+}
+.dist-hist-y-canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+#mu_distYAxis {
+  display: block;
+  width: 46px;
+}
+.dist-hist-y-corner {
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.dist-hist-x-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dist-hist-bars-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+#mu_distCanvas {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.dist-hist-xaxis-viewport {
+  display: block;
+  height: 38px;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+  background: var(--surface, transparent);
+}
+#mu_distXAxis {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.dist-hist-xtitle { display: none; }
+
+.dist-hist-scrollbar-track {
+  display: block;
+  height: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(232,68,10,0.65) rgba(232,68,10,0.12);
+  cursor: default;
+  margin-top: 2px;
+}
+.dist-hist-scrollbar-track::-webkit-scrollbar { height: 8px; }
+.dist-hist-scrollbar-track::-webkit-scrollbar-track { background: rgba(232,68,10,0.12); border-radius: 4px; }
+.dist-hist-scrollbar-track::-webkit-scrollbar-thumb { background: rgba(232,68,10,0.65); border-radius: 4px; }
+.dist-hist-scrollbar-track::-webkit-scrollbar-thumb:hover { background: rgba(232,68,10,0.90); }
+.dist-hist-scrollbar-inner { display: block; height: 1px; }
+
+.dist-hist-tip {
+  position: absolute;
+  background: rgba(18,15,12,0.92);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 7px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 20;
+  display: none;
+  transform: translateX(-50%);
+}
+
+.dist-hist-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  padding: 7px 14px 10px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  align-items: center;
+}
+.dist-leg-item { display: flex; align-items: center; gap: 4px; font-size: 9.5px; color: var(--text3); }
+.dist-leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.dist-leg-note {
+  margin-left: auto;
+  font-size: 9px; color: var(--text3); font-weight: 600;
+  letter-spacing: 0.04em;
+  background: var(--elevated, rgba(232,68,10,0.04));
+  border: 1px solid var(--border);
+  border-radius: 5px; padding: 2px 7px; white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ENGAGEMENT LEADERBOARD
+   ═══════════════════════════════════════════════════════════════════ */
+.lb-card {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  height: 190px;
+  min-height: 0;
+  overflow: hidden;
+}
+.lb-card .card-body {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.lb-title {
+  padding: 12px 16px 10px;
+  font-size: 12.5px; font-weight: 700; color: var(--text);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 6px;
+  flex-shrink: 0;
+}
+.lb-title svg { width: 13px; height: 13px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.lb-grid-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding: 8px;
+  scrollbar-width: auto;
+  scrollbar-color: rgba(232,68,10,0.60) rgba(232,68,10,0.12);
+}
+.lb-grid-scroll::-webkit-scrollbar { width: 7px; }
+.lb-grid-scroll::-webkit-scrollbar-track { background: rgba(232,68,10,0.12); border-radius: 4px; margin: 4px 0; }
+.lb-grid-scroll::-webkit-scrollbar-thumb { background: rgba(232,68,10,0.60); border-radius: 4px; }
+.lb-grid-scroll::-webkit-scrollbar-thumb:hover { background: rgba(232,68,10,0.85); }
+
+.lb-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+.lb-item {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 10px;
+  min-width: 0; height: 56px; box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.lb-item:hover { border-color: var(--border2); box-shadow: 0 2px 8px rgba(232,68,10,0.08); }
+.lb-rank { font-size: 10px; font-weight: 700; color: var(--text3); flex-shrink: 0; min-width: 18px; }
+.lb-rank-gold { color: #f59e0b; }
+.lb-rank-silver { color: #94a3b8; }
+.lb-rank-bronze { color: #c07a3a; }
+.lb-info { flex: 1; min-width: 0; overflow: hidden; }
+.lb-name { font-size: 11px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-emo-row { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.lb-emo-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.lb-emo { font-size: 9.5px; color: var(--text3); }
+.lb-score { font-size: 13px; font-weight: 700; color: var(--accent); font-family: var(--font-display); flex-shrink: 0; }
+.lb-empty { font-size: 11px; color: var(--text3); font-style: italic; grid-column: 1 / -1; padding: 12px 0 4px; text-align: center; }
+
+/* ── Session control bar ── */
+.mu-session-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 12px 16px; flex-wrap: wrap;
+  box-shadow: var(--card-shadow); margin-bottom: 0;
+}
+.mu-session-bar-left { display: flex; align-items: center; gap: 8px; flex: 1; }
+.mu-session-badge {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  color: var(--text2); text-transform: uppercase;
+  background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 20px; padding: 4px 10px;
+}
+.mu-session-badge .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #6b7280; }
+.mu-session-badge.running .badge-dot { background: #22c55e; animation: livePip 0.8s ease-in-out infinite; }
+.mu-elapsed { font-size: 12px; font-weight: 700; font-family: var(--font-display); color: var(--text); letter-spacing: 0.04em; min-width: 44px; }
+.mu-frames-sub { font-size: 10px; color: var(--text3); }
+.mu-session-bar-right { display: flex; align-items: center; gap: 8px; }
+
+/* Room stats */
+.mu-stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+.mu-stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 13px 16px 12px;
+  display: flex; flex-direction: column; gap: 4px; box-shadow: var(--card-shadow);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.mu-stat-card:hover { border-color: var(--border2); box-shadow: 0 4px 16px rgba(232,68,10,0.06); }
+.mu-stat-label { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); }
+.mu-stat-value { font-family: var(--font-display); font-size: 1.55rem; font-weight: 700; color: var(--text); line-height: 1; }
+.mu-stat-sub { font-size: 9.5px; color: var(--text3); }
+
+/* usecase banner */
+.usecase-banner { align-items: center !important; }
+.usecase-banner-right { flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; min-width: 260px; align-items: flex-end; justify-content: center; align-self: center; }
+.usecase-stat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; border: 1px solid rgba(232,68,10,0.18); border-radius: 14px; overflow: hidden; background: rgba(232,68,10,0.03); width: 100%; }
+.usecase-stat-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px 8px; border-right: 1px solid rgba(232,68,10,0.12); border-bottom: 1px solid rgba(232,68,10,0.12); gap: 4px; }
+.usecase-stat-cell:nth-child(3),.usecase-stat-cell:nth-child(6) { border-right: none; }
+.usecase-stat-cell:nth-child(4),.usecase-stat-cell:nth-child(5),.usecase-stat-cell:nth-child(6) { border-bottom: none; }
+.usecase-stat-cell-num { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--accent); line-height: 1; }
+.usecase-stat-cell-label { font-size: 8px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; text-align: center; line-height: 1.35; }
+.usecase-stat-cell-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; color: var(--text2); background: var(--surface); border: 1px solid var(--border2); border-radius: 20px; padding: 5px 9px; white-space: nowrap; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   GROUP ANALYSIS CARD
+   ═══════════════════════════════════════════════════════════════════ */
+.mu-analysis-card { margin-bottom: 16px; }
+.mu-analysis-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px 13px; border-bottom: 1px solid var(--border);
+}
+.mu-analysis-hdr-left { display: flex; align-items: center; gap: 10px; }
+.mu-analysis-icon {
+  width: 26px; height: 26px; border-radius: 8px;
+  background: var(--grad); display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+.mu-analysis-icon svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mu-analysis-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.mu-analysis-sub { font-size: 10px; color: var(--text3); font-weight: 500; margin-top: 1px; }
+.mu-analysis-inner { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; }
+.mu-analysis-left { border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+.mu-sess-summary-title { font-size: 12px; font-weight: 700; color: var(--text); padding: 14px 18px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.mu-sess-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
+.mu-sess-tile { background: var(--surface); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.mu-sess-tile-label { font-size: 10px; color: var(--text3); font-weight: 600; letter-spacing: 0.04em; }
+.mu-sess-tile-value { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.1; font-family: var(--font-display); }
+.mu-sess-tile-sub { font-size: 10px; color: var(--text3); font-weight: 500; }
+.mu-overall-key { padding: 14px 18px 16px; border-top: 1px solid var(--border); }
+.mu-overall-key-title { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; }
+.mu-overall-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+.mu-overall-chip { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 10px; border-radius: 10px; font-size: 11.5px; font-weight: 700; border: 1.5px solid transparent; text-align: center; min-height: 36px; flex-direction: column; transition: transform 0.15s, box-shadow 0.15s; }
+.mu-overall-chip:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.mu-analysis-right { padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.mu-analysis-section-title { font-size: 12px; font-weight: 700; color: var(--text); flex-shrink: 0; margin: 0; }
+.mu-groq-status { display: none; align-items: center; gap: 5px; font-size: 11px; color: var(--accent); font-weight: 600; flex-shrink: 0; }
+.mu-groq-status.show { display: flex; }
+.mu-groq-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: livePip 0.8s ease-in-out infinite; }
+.mu-groq-dot:nth-child(2) { animation-delay: 0.15s; }
+.mu-groq-dot:nth-child(3) { animation-delay: 0.3s; }
+.mu-ai-output { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.mu-ai-output .ai-empty { color: var(--text3); font-style: italic; font-size: 11px; }
+.insight-card { flex: 1; background: var(--elevated, rgba(232,68,10,0.03)); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 5px; min-height: 0; }
+.insight-card-title { font-size: 11px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.insight-card-title-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.insight-card-desc { font-size: 11px; line-height: 1.65; color: var(--text2); margin: 0; }
+.mu-tips-box { flex-shrink: 0; }
+.mu-tips-header { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+.mu-tips-header svg { width: 11px; height: 11px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mu-tips-cards { display: flex; flex-direction: column; gap: 7px; }
+.mu-tips-body .ai-empty { color: var(--text3); font-style: italic; font-size: 11px; }
+.btn-analyse { padding: 7px 14px; border: none; border-radius: 8px; font-size: 11.5px; font-weight: 700; cursor: pointer; color: #fff; background: var(--accent); font-family: var(--font-body); display: flex; align-items: center; gap: 6px; transition: all 0.15s; }
+.btn-analyse:hover:not(:disabled) { background: var(--accent2); box-shadow: 0 3px 10px var(--accent-glow); }
+.btn-analyse:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-analyse svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Signal bar ── */
+.signal-bar { display: none; align-items: center; gap: 8px; padding: 9px 16px; background: rgba(202,138,4,0.1); border-bottom: 1px solid rgba(202,138,4,0.25); font-size: 11.5px; font-weight: 600; color: #92400e; }
+.signal-bar.show { display: flex; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ROW1 LAYOUT
+   ═══════════════════════════════════════════════════════════════════ */
+.row1 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 16px;
+  align-items: stretch;
+}
+.cam-card {
+  display: flex;
+  flex-direction: column;
+}
+.cam-card .cam-box {
+  aspect-ratio: 16/10;
+}
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  height: 100%;
+}
+.right-panel .dist-histogram-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.right-panel .lb-card {
+  flex: 0 0 auto;
+}
+
+/* ── Live pulse on stat cards ── */
+.mu-stat-value.live-pulse { animation: statPulse 0.4s ease-out; }
+@keyframes statPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); color: var(--accent); }
+  100% { transform: scale(1); }
+}
+
+/* ── Session elapsed timer display ── */
+.mu-elapsed-display {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 600; color: var(--text3);
+  background: var(--elevated); border: 1px solid var(--border);
+  border-radius: 6px; padding: 2px 8px;
+  font-family: var(--font-display); letter-spacing: 0.04em;
+}
+
+/* ── Face bounding box overlay ── */
+.mu-face-box-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* ════════════════════════════════════════
+   MOBILE RESPONSIVE FIXES
+   ════════════════════════════════════════ */
+
+/* Base: prevent horizontal overflow always */
+html, body {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  box-sizing: border-box !important;
+}
+
+/* Nav overflow fix */
+nav { overflow: visible !important; }
+nav ul, .nav-links { overflow: visible !important; }
+.nav-dropdown { overflow: visible !important; }
+
+@media (max-width: 900px) {
+  .mu-stats-row { grid-template-columns: repeat(2,1fr); }
+}
+
+@media (max-width: 768px) {
+
+  /* Page container */
+  .page {
+    padding: 14px 16px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  /* All cards */
+  .card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  /* ── USE CASE BANNER ── */
+  .usecase-banner {
+    flex-direction: column !important;
+    gap: 16px !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .usecase-banner-left {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .usecase-banner-right {
+    width: 100% !important;
+    min-width: 0 !important;
+    align-items: flex-start !important;
+    align-self: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Stat grid: 2 cols */
+  .usecase-stat-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .usecase-stat-cell:nth-child(3) { border-right: 1px solid rgba(232,68,10,0.12) !important; }
+  .usecase-stat-cell:nth-child(2),
+  .usecase-stat-cell:nth-child(4),
+  .usecase-stat-cell:nth-child(6) { border-right: none !important; }
+  .usecase-stat-cell:nth-child(5),
+  .usecase-stat-cell:nth-child(6) { border-bottom: none !important; }
+  .usecase-stat-cell-pill {
+    white-space: normal !important;
+    text-align: center !important;
+    font-size: 9px !important;
+    padding: 4px 6px !important;
+  }
+
+  /* ── HOW STRIP ── */
+  .how-strip {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .how-steps-row {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .how-step-box {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ── ROOM STATS: 2 col ── */
+  .mu-stats-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .mu-stat-card {
+    padding: 12px !important;
+    box-sizing: border-box !important;
+  }
+  .mu-stat-value { font-size: 1.3rem !important; }
+
+  /* ── ROW1: stack vertically ── */
+  .row1 {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .cam-card, .right-panel {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .right-panel { height: auto !important; }
+
+  /* Histogram: cap height */
+  .dist-histogram-card {
+    min-height: 260px !important;
+    max-height: 340px !important;
+  }
+
+  /* Leaderboard */
+  .lb-card {
+    height: auto !important;
+    max-height: 200px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .lb-grid { grid-template-columns: 1fr 1fr !important; }
+
+  /* ── GROUP ANALYSIS CARD ── */
+  .mu-analysis-hdr {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    padding: 12px 14px !important;
+  }
+  .mu-analysis-hdr-left { flex: 1 1 100% !important; }
+  .btn-analyse {
+    width: 100% !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+  }
+  .mu-analysis-inner { grid-template-columns: 1fr !important; }
+  .mu-analysis-left {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+  .mu-overall-chips { grid-template-columns: repeat(2, 1fr) !important; }
+  .mu-sess-tiles { grid-template-columns: 1fr 1fr !important; }
+  .mu-analysis-right { padding: 14px !important; }
+
+  /* ── Session bar ── */
+  .mu-session-bar {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 10px 14px !important;
+  }
+  .mu-session-bar-left,
+  .mu-session-bar-right { width: 100% !important; flex-wrap: wrap !important; }
+
+  /* ── Cam button row ── */
+  .cam-btn-row { flex-wrap: wrap !important; gap: 8px !important; }
+  .cam-btn-row > div:first-child { width: 100% !important; }
+  .btn-start, .btn-stop { flex: 1 !important; box-sizing: border-box !important; }
+
+  /* ── Text wrap ── */
+  .usecase-title, .usecase-desc,
+  .how-step-title, .how-step-desc,
+  .mu-stat-label, .mu-analysis-title, .mu-analysis-sub,
+  .insight-card-desc, .mu-sess-tile-label, .mu-sess-tile-sub,
+  p, span {
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .page { padding: 10px 12px !important; }
+
+  .mu-stats-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .mu-stat-value { font-size: 1.1rem !important; }
+  .mu-stat-label { font-size: 8.5px !important; }
+  .mu-stat-card { padding: 10px !important; }
+
+  .lb-grid { grid-template-columns: 1fr !important; }
+  .mu-overall-chips { grid-template-columns: repeat(2, 1fr) !important; }
+
+  .usecase-stat-cell { padding: 10px 6px !important; }
+  .usecase-stat-cell-num { font-size: 1.1rem !important; }
+
+  .dist-histogram-card { min-height: 220px !important; }
+}
+</style>
+<script src="script/network-alert.js" defer></script>
+</head>
+<body>
+
+<!-- ════════ NAV ════════ -->
+<nav>
+  <div class="nav-logo-wrap">
+    <a href="/home" class="nav-logo">
+      <div class="logo-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M7 18a5 5 0 0 1 10 0"/></svg></div>
+      Emotion Analysis
+    </a>
+  </div>
+  <div class="nav-spacer"></div>
+  <ul class="nav-links">
+    <li><a href="/home">Home</a></li>
+    <li class="nav-dropdown">
+      <button class="nav-dropdown-trigger active">
+        Detect
+        <svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="nav-dropdown-menu">
+        <a href="/livecam">
+          <svg viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          Single User
+        </a>
+        <a href="/multiuser" class="active">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Multi User
+        </a>
+      </div>
+    </li>
+    <li><a href="/faq">FAQ</a></li>
+    <li><a href="/feedback">Feedback</a></li>
+  </ul>
+  <div class="nav-actions">
+    <div id="mu_navLiveBadge" style="display:none;align-items:center;gap:5px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;letter-spacing:0.08em;padding:3px 9px;border-radius:20px;margin-right:6px">
+      <span style="width:6px;height:6px;background:#fff;border-radius:50%;display:inline-block"></span>LIVE
+    </div>
+    <a href="#" onclick="if(typeof Auth!=='undefined'&&Auth.logout)Auth.logout();else window.location.href='/logout'" class="btn-ghost-sm">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout
+    </a>
+  </div>
+  <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+</nav>
+
+<div class="mobile-overlay" id="mobileOverlay"></div>
+<div class="mobile-drawer" id="mobileDrawer" role="dialog" aria-label="Navigation menu">
+  <div class="drawer-header">
+    <div class="drawer-brand">
+      <div class="logo-box"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M7 18a5 5 0 0 1 10 0"/></svg></div>
+      <span class="drawer-brand-name">Emotion Analysis</span>
+    </div>
+    <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close menu">&#x2715;</button>
+  </div>
+  <div class="mobile-drawer-divider"></div>
+  <ul>
+    <li><a href="/home"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</a></li>
+    <li><a href="/livecam"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>Single User</a></li>
+    <li><a href="/multiuser" class="active"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Multi User</a></li>
+    <li><a href="/faq"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>FAQ</a></li>
+    <li><a href="/feedback"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Feedback</a></li>
+  </ul>
+  <div class="mobile-drawer-divider"></div>
+  <div class="mobile-drawer-actions">
+    <a href="#" onclick="if(typeof Auth!=='undefined'&&Auth.logout)Auth.logout();else window.location.href='/logout'" class="btn-ghost-sm">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout
+    </a>
+  </div>
+</div>
+
+<!-- ════════ PAGE ════════ -->
+<div class="page">
+
+  <!-- USE CASE BANNER -->
+  <div class="usecase-banner">
+    <div class="usecase-banner-left">
+      <div class="usecase-tag">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Use Case
+      </div>
+      <div class="usecase-title">Multi-User Group Emotion Monitoring</div>
+      <div class="usecase-desc">
+        Designed for <strong>educators, trainers, and facilitators</strong> who need to track emotional states across an entire room simultaneously.
+        A single camera captures the full group — the model detects every human face independently and classifies each into 7 emotion categories in real time.
+      </div>
+      <div class="usecase-desc" style="margin-top:6px">
+        Only <strong>forward-facing participants</strong> are captured — background elements and non-human subjects are strictly excluded.
+        Square bounding boxes with emotion labels are drawn live on each detected face.
+      </div>
+    </div>
+    <div class="usecase-banner-right">
+      <div class="usecase-stat-grid">
+        <div class="usecase-stat-cell"><div class="usecase-stat-cell-num">∞</div><div class="usecase-stat-cell-label">Faces per frame</div></div>
+        <div class="usecase-stat-cell"><div class="usecase-stat-cell-num">7</div><div class="usecase-stat-cell-label">Emotion classes</div></div>
+        <div class="usecase-stat-cell"><div class="usecase-stat-cell-num">CNN</div><div class="usecase-stat-cell-label">Keras model</div></div>
+        <div class="usecase-stat-cell"><span class="usecase-stat-cell-pill">🔲 Face bounding boxes</span></div>
+        <div class="usecase-stat-cell"><span class="usecase-stat-cell-pill">📊 Stacked histogram</span></div>
+        <div class="usecase-stat-cell"><span class="usecase-stat-cell-pill">🤖 AI insights</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW TO USE -->
+  <div class="how-strip">
+    <div class="how-strip-label">HOW TO USE</div>
+    <div class="how-steps-row">
+      <div class="how-step-box"><div class="how-step-label">Step 01</div><div class="how-step-title">Allow camera access</div><div class="how-step-desc">Grant browser permission to activate your webcam facing the group.</div></div>
+      <div class="how-step-box"><div class="how-step-label">Step 02</div><div class="how-step-title">Start a session</div><div class="how-step-desc">Click "Start Session" — all faces in frame are detected simultaneously.</div></div>
+      <div class="how-step-box"><div class="how-step-label">Step 03</div><div class="how-step-title">Review group analysis</div><div class="how-step-desc">Inspect the histogram, leaderboard, and AI insights.</div></div>
+    </div>
+  </div>
+
+  <!-- Hidden elements kept for JS compatibility -->
+  <div id="mu_sessionBar" style="display:none">
+    <div id="mu_sessionBadge"><div class="badge-dot"></div><span id="mu_sessionBadgeTxt">IDLE</span></div>
+    <span id="mu_statDuration">0:00</span>
+    <span id="mu_statFrameCount">0</span>
+    <button id="mu_btnStart" onclick="mu_doStart()" style="display:none"></button>
+    <button id="mu_btnStop" onclick="mu_doStop()" disabled style="display:none"></button>
+  </div>
+
+  <!-- ROOM STATS ROW -->
+  <div class="mu-stats-row">
+    <div class="mu-stat-card">
+      <div class="mu-stat-label">Faces Detected</div>
+      <div class="mu-stat-value" id="mu_statFaceCount">0</div>
+      <div class="mu-stat-sub">in current frame</div>
+    </div>
+    <div class="mu-stat-card">
+      <div class="mu-stat-label">Group Engagement</div>
+      <div class="mu-stat-value" id="mu_statEngagement">—</div>
+      <div class="mu-stat-sub"><span id="mu_statTier">—</span> · out of 100</div>
+    </div>
+    <div class="mu-stat-card">
+      <div class="mu-stat-label">Dominant Emotion</div>
+      <div class="mu-stat-value" style="font-size:1.1rem" id="mu_statDominant">—</div>
+      <div class="mu-stat-sub">across all faces</div>
+    </div>
+    <div class="mu-stat-card">
+      <div class="mu-stat-label">Session</div>
+      <div class="mu-stat-value" style="font-size:1.1rem" id="mu_sessionChipLabel">—</div>
+      <div class="mu-stat-sub">current session</div>
+    </div>
+  </div>
+
+  <!-- ROW 1: CAM (left) + RIGHT PANEL -->
+  <div class="row1">
+
+    <!-- CAMERA CARD -->
+    <div class="card cam-card">
+      <div class="cam-section-title">
+        <div class="cam-section-title-left">
+          <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Live detection — multi-face
+        </div>
+        <div class="cam-live-chip" id="mu_liveFeedChip" style="display:none"><div class="cam-live-chip-dot"></div>Live</div>
+      </div>
+
+      <div class="signal-bar" id="mu_signalBar">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        API connection issue — retrying…
+      </div>
+
+      <div class="cam-box" id="mu_camBox">
+        <div class="cam-idle" id="mu_camIdle">
+          <div class="cam-idle-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="cam-idle-text">Click "Start Session" to begin group detection</div>
+        </div>
+        <video id="mu_videoEl" autoplay muted playsinline style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1"></video>
+        <canvas id="mu_canvasOverlay" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:6;"></canvas>
+        <div class="cam-ring" id="mu_camRing"></div>
+        <div class="cam-scan" id="mu_camScan"></div>
+        <div class="cam-status" id="mu_camStatus">
+          <div class="cam-status-dot ready" id="mu_camStatusDot"></div>
+          <span class="cam-status-txt" id="mu_camStatusTxt">READY</span>
+        </div>
+      </div>
+
+      <div class="cam-btn-row">
+        <div style="flex:1;display:flex;gap:8px">
+          <button class="btn-start" id="mu_btnStartInline" onclick="mu_doStart()">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>Start Session
+          </button>
+          <button class="btn-stop" id="mu_btnStopInline" onclick="mu_doStop()" disabled>
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Stop
+          </button>
+        </div>
+        <div class="mu-elapsed-display" id="mu_elapsedDisplay" style="display:none">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="mu_elapsedTxt">0:00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Stacked Histogram (top) + Leaderboard (bottom) -->
+    <div class="right-panel">
+
+      <!-- STACKED HISTOGRAM CARD -->
+      <div class="card dist-histogram-card" id="mu_distCard">
+        <div class="dist-hist-title">
+          <div class="dist-hist-title-left">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="4" height="18" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="17" y="5" width="4" height="16" rx="1"/></svg>
+            Participant emotion distribution
+          </div>
+          <span class="dist-hist-hint">scroll → · hover</span>
+        </div>
+
+        <div class="dist-hist-outer" id="mu_distOuter">
+          <div class="dist-hist-y-col">
+            <div class="dist-hist-y-canvas-wrap" id="mu_distYWrap">
+              <canvas id="mu_distYAxis"></canvas>
+            </div>
+            <div class="dist-hist-y-corner"></div>
+          </div>
+
+          <div class="dist-hist-x-col">
+            <div class="dist-hist-bars-viewport" id="mu_distBarsViewport">
+              <canvas id="mu_distCanvas"></canvas>
+            </div>
+            <div class="dist-hist-xaxis-viewport" id="mu_distXAxisViewport">
+              <canvas id="mu_distXAxis"></canvas>
+            </div>
+            <div class="dist-hist-xtitle">Participant →</div>
+            <div class="dist-hist-scrollbar-track" id="mu_distScrollbar">
+              <span class="dist-hist-scrollbar-inner" id="mu_distScrollbarInner"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dist-hist-tip" id="mu_distTip"></div>
+
+        <div class="dist-hist-legend">
+          <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#f59e0b"></div>Happy</div>
+          <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#6b7280"></div>Neutral</div>
+          <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#ec4899"></div>Surprised</div>
+          <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#3b82f6"></div>Sad</div>
+          <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#ef4444"></div>Angry</div>
+          <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#a855f7"></div>Fear</div>
+          <div class="dist-leg-item"><div class="dist-leg-dot" style="background:#10b981"></div>Disgust</div>
+          <div class="dist-leg-note">P = Person</div>
+        </div>
+      </div>
+
+      <!-- ENGAGEMENT LEADERBOARD CARD -->
+      <div class="card lb-card">
+        <div class="lb-title">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Engagement Leaderboard
+        </div>
+        <div class="lb-grid-scroll">
+          <div class="lb-grid" id="mu_leaderboard">
+            <div class="lb-empty" id="mu_lbHint">Start a session to see live rankings.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.right-panel -->
+  </div><!-- /.row1 -->
+
+  <!-- GROUP ANALYSIS CARD -->
+  <div class="card mu-analysis-card">
+    <div class="mu-analysis-hdr">
+      <div class="mu-analysis-hdr-left">
+        <div class="mu-analysis-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+        <div>
+          <div class="mu-analysis-title">Group analysis</div>
+          <div class="mu-analysis-sub">All detected faces · current session</div>
+        </div>
+      </div>
+      <button class="btn-analyse" id="mu_btnAnalyse" onclick="mu_runAnalysis()">
+        <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>Generate Analysis
+      </button>
+    </div>
+
+    <div class="mu-analysis-inner">
+      <div class="mu-analysis-left">
+        <div class="mu-sess-summary-title">Session Summary</div>
+        <div class="mu-sess-tiles">
+          <div class="mu-sess-tile">
+            <div class="mu-sess-tile-label">Duration</div>
+            <div class="mu-sess-tile-value" id="mu_summDuration">—</div>
+            <div class="mu-sess-tile-sub">session time</div>
+          </div>
+          <div class="mu-sess-tile">
+            <div class="mu-sess-tile-label">Persons Captured</div>
+            <div class="mu-sess-tile-value" id="mu_summFaces">—</div>
+            <div class="mu-sess-tile-sub">unique persons</div>
+          </div>
+          <div class="mu-sess-tile">
+            <div class="mu-sess-tile-label">Frames Analyzed</div>
+            <div class="mu-sess-tile-value" id="mu_summFrames">—</div>
+            <div class="mu-sess-tile-sub">total frames</div>
+          </div>
+          <div class="mu-sess-tile">
+            <div class="mu-sess-tile-label">Avg Engagement</div>
+            <div class="mu-sess-tile-value" id="mu_summEngagement" style="font-size:1.3rem">—</div>
+            <div class="mu-sess-tile-sub" id="mu_summTier">—</div>
+          </div>
+        </div>
+        <div class="mu-overall-key">
+          <div class="mu-overall-key-title">Overall Key Emotions</div>
+          <div class="mu-overall-chips" id="mu_overallChips">
+            <span style="font-size:10px;color:var(--text3);font-style:italic">Generate analysis to see key emotions.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mu-analysis-right">
+        <div class="mu-analysis-section-title">AI Key Insights</div>
+        <div class="mu-groq-status" id="mu_groqStatus">
+          <div class="mu-groq-dot"></div>
+          <div class="mu-groq-dot"></div>
+          <div class="mu-groq-dot"></div>
+          <span style="margin-left:4px">Groq is generating insights…</span>
+        </div>
+        <div class="mu-ai-output" id="mu_aiOutput">
+          <span class="ai-empty">Stop the session and click "Generate Analysis" to receive an AI-powered group summary.</span>
+        </div>
+        <div class="mu-tips-box">
+          <div class="mu-tips-header">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Facilitator Tips
+          </div>
+          <div class="mu-tips-cards" id="mu_tipsBody">
+            <span class="ai-empty">Generate analysis to get AI-powered facilitator tips.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.page -->
+
+<script src="script/auth.js"></script>
+<script src="script/shared/spike-detector.js"></script>
+<script src="script/pages/multiuser.js"></script>
+<script src="script/shared/drawer.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════════
+   MULTIUSER UI CONTROLLER — v12
+   ════════════════════════════════════════════════════════════ */
+
+const MU_EMO_COLORS = {
+  happy:'#f59e0b', neutral:'#6b7280', sad:'#3b82f6',
+  angry:'#ef4444', fearful:'#a855f7', disgusted:'#10b981', surprised:'#ec4899'
+};
+const MU_EMO_LABELS = {
+  happy:'Happy', neutral:'Neutral', sad:'Sad',
+  angry:'Angry', fearful:'Fear', disgusted:'Disgust', surprised:'Surprised'
+};
+const EMO_ORDER = ['happy','neutral','surprised','sad','angry','fearful','disgusted'];
+
+const mu_faceDistCounts  = new Map();
+const mu_knownFaceIndexes = new Map();
+let   mu_histHoverFace   = null;
+let   mu_histHoverEmo    = null;
+
+function mu_getCompactIndex(rawIndex) {
+  if (mu_knownFaceIndexes.has(rawIndex)) return mu_knownFaceIndexes.get(rawIndex);
+  const next = mu_knownFaceIndexes.size;
+  mu_knownFaceIndexes.set(rawIndex, next);
+  return next;
+}
+
+const MU_SESSION_KEY = 'emotionai_mu_session_number';
+localStorage.setItem(MU_SESSION_KEY, '0');
+
+function mu_getSessionNumber() { return parseInt(localStorage.getItem(MU_SESSION_KEY) || '0', 10); }
+function mu_incrementSessionNumber() { const next = mu_getSessionNumber() + 1; localStorage.setItem(MU_SESSION_KEY, String(next)); return next; }
+function mu_displaySessionNumber() { const n = mu_getSessionNumber(); const el = document.getElementById('mu_sessionChipLabel'); if (el) el.textContent = n > 0 ? `Session #${n}` : '—'; }
+
+let mu_elapsedInterval = null;
+let mu_elapsedStart    = 0;
+
+function mu_startElapsed() {
+  mu_elapsedStart = Date.now();
+  const el = document.getElementById('mu_elapsedDisplay');
+  const txt = document.getElementById('mu_elapsedTxt');
+  if (el) el.style.display = 'inline-flex';
+  mu_elapsedInterval = setInterval(() => {
+    const s = Math.floor((Date.now() - mu_elapsedStart) / 1000);
+    const m = Math.floor(s / 60);
+    if (txt) txt.textContent = `${m}:${String(s % 60).padStart(2,'0')}`;
+  }, 1000);
+}
+function mu_stopElapsed() { clearInterval(mu_elapsedInterval); }
+
+function mu_syncCanvas() {
+  const video = document.getElementById('mu_videoEl');
+  const canvas = document.getElementById('mu_canvasOverlay');
+  if (!canvas || !video) return;
+  const vw = video.videoWidth || video.clientWidth || 640;
+  const vh = video.videoHeight || video.clientHeight || 480;
+  if (canvas.width !== vw || canvas.height !== vh) { canvas.width = vw; canvas.height = vh; }
+}
+
+function mu_drawBoxes(faces) {
+  const canvas = document.getElementById('mu_canvasOverlay');
+  const video = document.getElementById('mu_videoEl');
+  if (!canvas || !video) return;
+  const vw = video.videoWidth || video.clientWidth || 640;
+  const vh = video.videoHeight || video.clientHeight || 480;
+  if (canvas.width !== vw || canvas.height !== vh) { canvas.width = vw; canvas.height = vh; }
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, vw, vh);
+  for (const face of faces) {
+    const bbox = face.bbox; if (!bbox) continue;
+    const norm = bbox.x <= 1 && bbox.y <= 1 && bbox.w <= 1 && bbox.h <= 1;
+    const bx = norm ? bbox.x * vw : bbox.x, by = norm ? bbox.y * vh : bbox.y;
+    const bw = norm ? bbox.w * vw : bbox.w, bh = norm ? bbox.h * vh : bbox.h;
+    const color = MU_EMO_COLORS[face.draftKey] || '#f97316';
+    const label = MU_EMO_LABELS[face.draftKey] || (face.draftKey || 'Unknown');
+    const conf = face.conf != null ? face.conf : (face.confidence != null ? Math.round(face.confidence * 100) : 0);
+    const rawIndex = face.face_index != null ? face.face_index : 0;
+    const compactIndex = mu_getCompactIndex(rawIndex);
+    const pLabel = `P${compactIndex + 1}`;
+    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.strokeRect(bx, by, bw, bh);
+    const cs = Math.min(14, bw * 0.18, bh * 0.18); ctx.lineWidth = 3; ctx.beginPath();
+    ctx.moveTo(bx, by+cs); ctx.lineTo(bx, by); ctx.lineTo(bx+cs, by);
+    ctx.moveTo(bx+bw-cs, by); ctx.lineTo(bx+bw, by); ctx.lineTo(bx+bw, by+cs);
+    ctx.moveTo(bx+bw, by+bh-cs); ctx.lineTo(bx+bw, by+bh); ctx.lineTo(bx+bw-cs, by+bh);
+    ctx.moveTo(bx+cs, by+bh); ctx.lineTo(bx, by+bh); ctx.lineTo(bx, by+bh-cs);
+    ctx.stroke(); ctx.restore();
+    const pillText = `${pLabel} · ${label} ${conf}%`;
+    ctx.save(); ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
+    const tw = ctx.measureText(pillText).width, ph = 17, pw = tw + 12, pr = 4;
+    const lx = Math.max(0, Math.min(bx, vw - pw)), ly = Math.max(0, by - ph - 4);
+    ctx.fillStyle = color;
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(lx, ly, pw, ph, pr); ctx.fill(); } else { ctx.fillRect(lx, ly, pw, ph); }
+    ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.fillText(pillText, lx + 6, ly + ph / 2); ctx.restore();
+  }
+}
+
+const HIST = { BAR_W:54, BAR_GAP:18, Y_W:46, CH:200, PAD_T:14, PAD_B:14 };
+
+function mu_renderHistogram() {
+  const barCanvas = document.getElementById('mu_distCanvas');
+  const yCanvas   = document.getElementById('mu_distYAxis');
+  const viewport  = document.getElementById('mu_distBarsViewport');
+  const yWrap     = document.getElementById('mu_distYWrap');
+  if (!barCanvas || !yCanvas || !viewport || !yWrap) return;
+  const faces = [...mu_faceDistCounts.keys()].sort((a,b) => a-b);
+  const n = faces.length;
+  const naturalW = n * (HIST.BAR_W + HIST.BAR_GAP) + HIST.BAR_GAP;
+  const viewW = viewport.clientWidth || 300;
+  const totalW = Math.max(naturalW, viewW);
+  const canvasH = HIST.PAD_T + HIST.CH + HIST.PAD_B;
+  const dpr = window.devicePixelRatio || 1;
+  const yH = HIST.PAD_T + HIST.CH + HIST.PAD_B;
+  yCanvas.width = HIST.Y_W * dpr; yCanvas.height = yH * dpr;
+  yCanvas.style.width = HIST.Y_W + 'px'; yCanvas.style.height = yH + 'px';
+  barCanvas.width = totalW * dpr; barCanvas.height = canvasH * dpr;
+  barCanvas.style.width = totalW + 'px'; barCanvas.style.height = canvasH + 'px';
+  const ctx = barCanvas.getContext('2d'), yctx = yCanvas.getContext('2d');
+  ctx.scale(dpr, dpr); yctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, totalW, canvasH); yctx.clearRect(0, 0, HIST.Y_W, yH);
+  const yLabels = [0, 25, 50, 75, 100];
+  yctx.font = `600 9px "Plus Jakarta Sans", sans-serif`; yctx.fillStyle = 'rgba(140,135,130,0.8)'; yctx.textAlign = 'right';
+  yLabels.forEach(pct => {
+    const y = HIST.PAD_T + HIST.CH - (pct / 100) * HIST.CH;
+    yctx.beginPath(); yctx.moveTo(HIST.Y_W-5, y); yctx.lineTo(HIST.Y_W-1, y);
+    yctx.strokeStyle = 'rgba(140,135,130,0.45)'; yctx.lineWidth = 1; yctx.stroke();
+    const labelY = Math.min(y + 3.5, HIST.PAD_T + HIST.CH + HIST.PAD_B - 4);
+    yctx.fillText(pct + '%', HIST.Y_W - 8, labelY);
+  });
+  yctx.beginPath(); yctx.moveTo(HIST.Y_W-1, HIST.PAD_T); yctx.lineTo(HIST.Y_W-1, HIST.PAD_T+HIST.CH);
+  yctx.strokeStyle = 'rgba(140,135,130,0.25)'; yctx.lineWidth = 1; yctx.stroke();
+  yctx.save(); yctx.translate(10, HIST.PAD_T + HIST.CH / 2); yctx.rotate(-Math.PI / 2);
+  yctx.font = `700 8px "Plus Jakarta Sans", sans-serif`; yctx.fillStyle = 'rgba(140,135,130,0.5)'; yctx.textAlign = 'center';
+  yctx.fillText('% share', 0, 0); yctx.restore();
+  let emptyOverlay = document.getElementById('mu_distEmpty');
+  if (!n) {
+    if (!emptyOverlay) {
+      emptyOverlay = document.createElement('div'); emptyOverlay.id = 'mu_distEmpty';
+      emptyOverlay.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-style:italic;color:rgba(140,135,130,0.65);pointer-events:none;z-index:2;background:transparent';
+      emptyOverlay.textContent = 'Start a session to see histogram';
+      const outer = document.getElementById('mu_distOuter');
+      if (outer) { outer.style.position = 'relative'; outer.appendChild(emptyOverlay); }
+    }
+    emptyOverlay.style.display = 'flex'; return;
+  }
+  if (emptyOverlay) emptyOverlay.style.display = 'none';
+  ctx.beginPath(); ctx.moveTo(0, HIST.PAD_T+HIST.CH); ctx.lineTo(totalW, HIST.PAD_T+HIST.CH);
+  ctx.strokeStyle = 'rgba(140,135,130,0.45)'; ctx.lineWidth = 1; ctx.stroke();
+  yLabels.forEach(pct => {
+    const y = HIST.PAD_T + HIST.CH - (pct / 100) * HIST.CH;
+    ctx.save(); ctx.globalAlpha = 0.14; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(totalW, y);
+    ctx.strokeStyle = 'rgba(140,135,130,0.9)'; ctx.lineWidth = 1; ctx.setLineDash([3, 4]); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1; ctx.restore();
+  });
+  let barW = HIST.BAR_W, barGap = HIST.BAR_GAP;
+  if (naturalW <= viewW && n > 0) { barGap = Math.floor((viewW - n * barW) / (n + 1)); barGap = Math.max(barGap, HIST.BAR_GAP); }
+  faces.forEach((fi, i) => {
+    const counts = mu_faceDistCounts.get(fi);
+    const total = Object.values(counts).reduce((a,b) => a+b, 0) || 1;
+    const x = barGap + i * (barW + barGap); let yOff = HIST.PAD_T + HIST.CH;
+    const isHov = mu_histHoverFace === fi;
+    EMO_ORDER.forEach(emo => {
+      const count = counts[emo] || 0; if (!count) return;
+      const pct = count / total, bH = pct * HIST.CH;
+      const color = MU_EMO_COLORS[emo];
+      const isTop = EMO_ORDER.slice(EMO_ORDER.indexOf(emo)+1).every(e => !(counts[e]||0));
+      ctx.globalAlpha = isHov ? (mu_histHoverEmo === emo ? 1.0 : 0.28) : 0.90;
+      ctx.fillStyle = color;
+      if (isTop && bH > 5) {
+        ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, yOff-bH, barW, bH, [4,4,0,0]); else ctx.rect(x, yOff-bH, barW, bH); ctx.fill();
+      } else { ctx.fillRect(x, yOff-bH, barW, bH); }
+      ctx.globalAlpha = 1;
+      if (bH > 18) { ctx.font = `700 9px "Plus Jakarta Sans", sans-serif`; ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.textAlign = 'center'; ctx.fillText(Math.round(pct*100)+'%', x+barW/2, yOff-bH/2+3.5); }
+      yOff -= bH;
+    });
+  });
+  const xaxisCanvas = document.getElementById('mu_distXAxis');
+  const xaxisVP = document.getElementById('mu_distXAxisViewport');
+  if (xaxisCanvas && xaxisVP) {
+    const xH = 38;
+    xaxisCanvas.width = totalW * dpr; xaxisCanvas.height = xH * dpr;
+    xaxisCanvas.style.width = totalW + 'px'; xaxisCanvas.style.height = xH + 'px';
+    const xctx = xaxisCanvas.getContext('2d'); xctx.scale(dpr, dpr); xctx.clearRect(0, 0, totalW, xH);
+    faces.forEach((fi, i) => {
+      const x = barGap + i * (barW + barGap);
+      xctx.font = `700 10px "Plus Jakarta Sans", sans-serif`; xctx.fillStyle = 'rgba(232,68,10,0.75)'; xctx.textAlign = 'center'; xctx.textBaseline = 'alphabetic';
+      xctx.fillText(`P${fi+1}`, x+barW/2, 14);
+    });
+    xctx.font = `700 8.5px "Plus Jakarta Sans", sans-serif`; xctx.fillStyle = 'rgba(140,135,130,0.55)'; xctx.textAlign = 'center'; xctx.textBaseline = 'middle';
+    xctx.fillText('NO. OF PERSONS \u2192', totalW/2, 30);
+  }
+  mu_syncScrollbarWidth(); mu_syncXAxisScroll();
+}
+
+function mu_syncXAxisScroll() {
+  const track = document.getElementById('mu_distScrollbar');
+  const bars = document.getElementById('mu_distCanvas');
+  const xaxis = document.getElementById('mu_distXAxis');
+  if (!track || !bars) return;
+  const sl = track.scrollLeft;
+  bars.style.transform = `translateX(-${sl}px)`;
+  if (xaxis) xaxis.style.transform = `translateX(-${sl}px)`;
+}
+
+function mu_syncScrollbarWidth() {
+  const track = document.getElementById('mu_distScrollbar');
+  const inner = document.getElementById('mu_distScrollbarInner');
+  const viewport = document.getElementById('mu_distBarsViewport');
+  if (!track || !inner || !viewport) return;
+  const faces = [...mu_faceDistCounts.keys()];
+  const n = faces.length;
+  const naturalW = n > 0 ? n * (HIST.BAR_W + HIST.BAR_GAP) + HIST.BAR_GAP : 0;
+  const viewW = viewport.clientWidth || 300;
+  track.style.visibility = 'visible';
+  if (naturalW <= viewW || n === 0) {
+    inner.style.width = (viewW + 2) + 'px'; track.scrollLeft = 0;
+    const bars = document.getElementById('mu_distCanvas'); const xaxis = document.getElementById('mu_distXAxis');
+    if (bars) bars.style.transform = 'translateX(0px)'; if (xaxis) xaxis.style.transform = 'translateX(0px)';
+  } else { inner.style.width = naturalW + 'px'; }
+}
+
+function mu_histHit(e) {
+  const canvas = document.getElementById('mu_distCanvas'); const tip = document.getElementById('mu_distTip');
+  const card = document.getElementById('mu_distCard'); const track = document.getElementById('mu_distScrollbar');
+  if (!canvas || !tip || !card) return;
+  const scrollLeft = track ? track.scrollLeft : 0;
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left + scrollLeft, my = e.clientY - rect.top;
+  const faces = [...mu_faceDistCounts.keys()].sort((a,b) => a-b);
+  const n = faces.length, viewW = document.getElementById('mu_distBarsViewport')?.clientWidth || 300;
+  const naturalW = n * (HIST.BAR_W + HIST.BAR_GAP) + HIST.BAR_GAP;
+  let barW = HIST.BAR_W, barGap = HIST.BAR_GAP;
+  if (naturalW <= viewW && n > 0) { barGap = Math.floor((viewW - n * barW) / (n+1)); barGap = Math.max(barGap, HIST.BAR_GAP); }
+  let found = false;
+  faces.forEach((fi, i) => {
+    const x = barGap + i * (barW + barGap);
+    if (mx >= x && mx <= x+barW && my >= HIST.PAD_T && my <= HIST.PAD_T+HIST.CH) {
+      found = true;
+      const counts = mu_faceDistCounts.get(fi); const total = Object.values(counts).reduce((a,b)=>a+b,0)||1;
+      let yOff = HIST.PAD_T + HIST.CH; let hovEmo = null;
+      for (const emo of EMO_ORDER) { const count = counts[emo]||0; if (!count) continue; const bH = (count/total)*HIST.CH; if (my >= yOff-bH && my <= yOff) { hovEmo = emo; break; } yOff -= bH; }
+      if (mu_histHoverFace !== fi || mu_histHoverEmo !== hovEmo) { mu_histHoverFace = fi; mu_histHoverEmo = hovEmo; mu_renderHistogram(); }
+      const pct = hovEmo ? Math.round(((counts[hovEmo]||0)/total)*100) : null;
+      tip.innerHTML = hovEmo ? `<strong>P${fi+1}</strong> · ${MU_EMO_LABELS[hovEmo]}: ${pct}%` : `<strong>P${fi+1}</strong>`;
+      const cardRect = card.getBoundingClientRect();
+      const wrapRect = document.getElementById('mu_distBarsViewport')?.getBoundingClientRect() || cardRect;
+      tip.style.left = (wrapRect.left - cardRect.left + (x+barW/2) - scrollLeft) + 'px';
+      tip.style.top = (rect.top - cardRect.top + HIST.PAD_T - 40) + 'px';
+      tip.style.display = 'block';
+    }
+  });
+  if (!found) { mu_histHoverFace = null; mu_histHoverEmo = null; if (tip) tip.style.display = 'none'; mu_renderHistogram(); }
+}
+
+function mu_updateDistribution(faces) {
+  for (const face of faces) {
+    const rawIndex = face.face_index != null ? face.face_index : 0;
+    const compactIndex = mu_getCompactIndex(rawIndex);
+    const k = face.draftKey;
+    if (!mu_faceDistCounts.has(compactIndex)) mu_faceDistCounts.set(compactIndex, {happy:0,neutral:0,sad:0,angry:0,fearful:0,disgusted:0,surprised:0});
+    const counts = mu_faceDistCounts.get(compactIndex);
+    if (k in counts) counts[k]++;
+  }
+  mu_renderHistogram();
+}
+
+function mu_updateLeaderboard() {
+  if (typeof MU === 'undefined') return;
+  const state = MU.getState(), entries = [];
+  state.faceState.forEach((fs, fi) => {
+    if (fs.missingFrames === 0) { const compactIndex = mu_getCompactIndex(fi); entries.push({ fi: compactIndex, ema: Math.round(fs.ema), key: fs.lastDraftKey || 'neutral' }); }
+  });
+  entries.sort((a,b) => b.ema - a.ema);
+  const lb = document.getElementById('mu_leaderboard'), hint = document.getElementById('mu_lbHint');
+  if (!lb) return;
+  lb.querySelectorAll('.lb-item').forEach(el => el.remove());
+  if (!entries.length) { if (hint) hint.style.display = ''; return; }
+  if (hint) hint.style.display = 'none';
+  const rankClass = i => i===0?'lb-rank lb-rank-gold':i===1?'lb-rank lb-rank-silver':i===2?'lb-rank lb-rank-bronze':'lb-rank';
+  const rankSymbol = i => i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+  entries.forEach((e, i) => {
+    const color = MU_EMO_COLORS[e.key]||'#6b7280', label = MU_EMO_LABELS[e.key]||e.key;
+    const item = document.createElement('div'); item.className = 'lb-item';
+    item.innerHTML = `<div class="${rankClass(i)}">${rankSymbol(i)}</div><div class="lb-info"><div class="lb-name">P${e.fi+1}</div><div class="lb-emo-row"><div class="lb-emo-dot" style="background:${color}"></div><div class="lb-emo">${label}</div></div></div><div class="lb-score">${e.ema}</div>`;
+    lb.insertBefore(item, hint||null);
+  });
+}
+
+(function patchPipeline() {
+  const _orig = window.mu_applyDetection;
+  if (typeof _orig !== 'function') { setTimeout(patchPipeline, 100); return; }
+  window.mu_applyDetection = function(faces) {
+    _orig(faces); mu_drawBoxes(faces); mu_updateDistribution(faces); mu_updateLeaderboard();
+    const badge = document.getElementById('mu_sessionBadge'), txt = document.getElementById('mu_sessionBadgeTxt');
+    if (badge) badge.classList.toggle('running', mu_isLive);
+    if (txt) txt.textContent = mu_isLive ? 'LIVE' : 'STOPPED';
+  };
+})();
+
+const _origStart = window.mu_doStart, _origStop = window.mu_doStop;
+
+window.mu_doStart = async function() {
+  if (typeof _origStart === 'function') await _origStart();
+  mu_faceDistCounts.clear(); mu_knownFaceIndexes.clear(); mu_histHoverFace = null; mu_histHoverEmo = null; mu_renderHistogram();
+  mu_syncAllBtns(true); mu_syncCanvas(); mu_startElapsed();
+  const n = mu_incrementSessionNumber(), el = document.getElementById('mu_sessionChipLabel');
+  if (el) el.textContent = `Session #${n}`;
+};
+
+window.mu_doStop = async function() {
+  if (typeof _origStop === 'function') await _origStop();
+  mu_syncAllBtns(false); mu_stopElapsed();
+  const canvas = document.getElementById('mu_canvasOverlay');
+  if (canvas) { const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); }
+};
+
+function mu_syncAllBtns(live) {
+  ['mu_btnStart','mu_btnStartInline'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = live; });
+  ['mu_btnStop','mu_btnStopInline'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = !live; });
+  const badge = document.getElementById('mu_sessionBadge'), txt = document.getElementById('mu_sessionBadgeTxt');
+  if (badge) badge.classList.toggle('running', live);
+  if (txt) txt.textContent = live ? 'LIVE' : (typeof mu_frameCount !== 'undefined' && mu_frameCount > 0 ? 'STOPPED' : 'IDLE');
+  const navBadge = document.getElementById('mu_navLiveBadge'), liveChip = document.getElementById('mu_liveFeedChip');
+  if (navBadge) navBadge.style.display = live ? 'flex' : 'none';
+  if (liveChip) liveChip.style.display = live ? 'flex' : 'none';
+  const elapsed = document.getElementById('mu_elapsedDisplay');
+  if (elapsed) elapsed.style.display = live ? 'inline-flex' : 'none';
+  if (live) {
+    document.getElementById('mu_camRing')?.classList.add('active'); document.getElementById('mu_camScan')?.classList.add('active');
+    const dot = document.getElementById('mu_camStatusDot'); if (dot) dot.className = 'cam-status-dot live';
+    const stxt = document.getElementById('mu_camStatusTxt'); if (stxt) stxt.textContent = 'LIVE';
+  } else {
+    document.getElementById('mu_camRing')?.classList.remove('active'); document.getElementById('mu_camScan')?.classList.remove('active');
+    const dot = document.getElementById('mu_camStatusDot'); if (dot) dot.className = 'cam-status-dot ready';
+    const stxt = document.getElementById('mu_camStatusTxt'); if (stxt) stxt.textContent = (typeof mu_frameCount !== 'undefined' && mu_frameCount > 0) ? 'STOPPED' : 'READY';
+  }
+}
+
+async function mu_runAnalysis() {
+  const out = document.getElementById('mu_aiOutput'), tips = document.getElementById('mu_tipsBody');
+  const status = document.getElementById('mu_groqStatus'), chips = document.getElementById('mu_overallChips');
+  const btn = document.getElementById('mu_btnAnalyse');
+  if (out) out.innerHTML = ''; if (tips) tips.innerHTML = '<span class="ai-empty">Generating…</span>';
+  if (status) status.classList.add('show'); if (btn) btn.disabled = true;
+  const state = typeof MU !== 'undefined' ? MU.getState() : {};
+  const faceCount = state.faceCount || mu_faceDistCounts.size || 0;
+  const engagement = Math.round(state.roomEngagement || 0);
+  const frames = state.frameCount || 0, duration = state.sessionTime || '0:00';
+  const tier = engagement >= 70 ? 'Active' : engagement >= 40 ? 'Moderate' : 'Inactive';
+  const setText = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  setText('mu_summDuration', duration); setText('mu_summFaces', faceCount);
+  setText('mu_summFrames', frames.toLocaleString()); setText('mu_summEngagement', engagement);
+  const tierEl = document.getElementById('mu_summTier');
+  if (tierEl) { tierEl.textContent = tier + ' engagement'; tierEl.style.color = engagement >= 70 ? '#16a34a' : engagement >= 40 ? '#ca8a04' : '#dc2626'; }
+  const allCounts = {happy:0,neutral:0,sad:0,angry:0,fearful:0,disgusted:0,surprised:0};
+  mu_faceDistCounts.forEach(counts => { Object.entries(counts).forEach(([k,v]) => { if (k in allCounts) allCounts[k] += v; }); });
+  const grandTotal = Object.values(allCounts).reduce((a,b)=>a+b,0)||1;
+  const sorted = Object.entries(allCounts).sort((a,b)=>b[1]-a[1]);
+  const domLabel = MU_EMO_LABELS[sorted[0]?.[0]] || 'Neutral';
+  const p = k => Math.round(((allCounts[k]||0)/grandTotal)*100);
+  const posPct = p('happy')+p('surprised'), negPct = p('angry')+p('sad')+p('fearful')+p('disgusted'), neuPct = p('neutral');
+  if (chips) {
+    const detected = sorted.filter(([,v]) => v > 0);
+    if (!detected.length) { chips.innerHTML = '<span style="font-size:10px;color:var(--text3);font-style:italic;grid-column:1/-1">No data yet.</span>'; }
+    else { chips.innerHTML = detected.map(([emo, v]) => { const col = MU_EMO_COLORS[emo]; const pct2 = Math.round((v/grandTotal)*100); return `<span class="mu-overall-chip" style="background:${col}18;border-color:${col}40;color:${col}"><span style="font-size:9px;opacity:0.8">${MU_EMO_LABELS[emo]}</span><span style="font-size:13px;font-weight:800">${pct2}%</span></span>`; }).join(''); }
+  }
+  const emotionSummary = sorted.slice(0,5).filter(([,v])=>v>0).map(([emo,v])=>`${MU_EMO_LABELS[emo]}: ${Math.round((v/grandTotal)*100)}%`).join(', ');
+  const perPersonSummary = [...mu_faceDistCounts.entries()].map(([fi, counts]) => { const ftotal = Object.values(counts).reduce((a,b)=>a+b,0)||1; const top = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]; return `P${fi+1}: dominant ${MU_EMO_LABELS[top?.[0]]||'Neutral'} (${Math.round(((top?.[1]||0)/ftotal)*100)}%)`; }).join('; ');
+  function insightCard(title, desc) { return `<div class="insight-card"><div class="insight-card-title"><div class="insight-card-title-dot"></div>${title}</div><div class="insight-card-desc">${desc}</div></div>`; }
+  const BG_MAP = {'#dc2626':'rgba(220,38,38,0.04)','#f97316':'rgba(249,115,22,0.04)','#e8440a':'rgba(232,68,10,0.04)','#ca8a04':'rgba(202,138,4,0.04)','#16a34a':'rgba(22,163,74,0.04)','#6366f1':'rgba(99,102,241,0.04)','#ec4899':'rgba(236,72,153,0.04)','#3b82f6':'rgba(59,130,246,0.04)'};
+  function tipCard(t) { const bg = BG_MAP[t.color]||'rgba(107,114,128,0.04)'; return `<div style="border:1px solid ${t.color}33;border-left:3px solid ${t.color};border-radius:8px;padding:10px 14px;background:${bg}"><div style="font-size:10px;font-weight:700;letter-spacing:0.06em;color:${t.color};margin-bottom:4px;text-transform:uppercase">${t.label}</div><div style="font-size:10.5px;line-height:1.6;color:var(--text);opacity:0.85">${t.desc}</div></div>`; }
+  try {
+    const res = await Auth.apiFetch('/generate-insights-multi', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ duration, emotion_summary: emotionSummary||'No data', dominant_emotion: domLabel, engagement_score: engagement, person_count: faceCount, frames_analyzed: frames, per_person: perPersonSummary||'Not available', positive_pct: posPct, negative_pct: negPct, neutral_pct: neuPct, instructions: 'Write in plain professional English. You are an expert educational psychologist. Be specific, not generic. Total response under 220 words.' }) });
+    if (!res.ok) { const err = await res.json().catch(()=>({})); throw new Error(err.detail||`Server error ${res.status}`); }
+    const parsed = await res.json();
+    if (status) status.classList.remove('show');
+    if (parsed.insights && Array.isArray(parsed.insights)) {
+      const clean = s => s.replace(/see session data for details\.?/gi,'').replace(/check the (session )?timeline for (more )?details\.?/gi,'').replace(/\s{2,}/g,' ').trim();
+      const aiInsights = parsed.insights.slice(0, 2);
+      if (out) {
+        if (aiInsights.length >= 2) { out.innerHTML = aiInsights.map(ins => insightCard(ins.title, clean(ins.desc))).join(''); }
+        else if (aiInsights.length === 1) { out.innerHTML = insightCard(aiInsights[0].title, clean(aiInsights[0].desc)) + insightCard('Individual Patterns', perPersonSummary||`${faceCount} person(s) detected.`); }
+        else { out.innerHTML = mu_fallbackInsightCards({ faceCount, engagement, frames, domLabel, tier, emotionSummary, posPct, negPct, neuPct, insightCard }); }
+      }
+      const t1 = buildTip1(negPct, neuPct, posPct), t2 = buildTip2(engagement);
+      if (tips) tips.innerHTML = tipCard(t1) + tipCard(t2);
+    } else { throw new Error('No insights in response'); }
+  } catch (err) {
+    if (status) status.classList.remove('show');
+    mu_renderFallback(out, tips, { faceCount, engagement, frames, duration, domLabel, tier, emotionSummary, posPct, negPct, neuPct, insightCard, tipCard });
+  }
+  if (btn) btn.disabled = false;
+  mu_updateLeaderboard();
+}
+
+function buildTip1(negPct, neuPct, posPct) {
+  if (negPct >= 30) return { color:'#dc2626', label:'Group Emotion', desc:`Frustration or confusion showed up in <strong>${negPct}%</strong> of readings. Break content into shorter segments and check comprehension every few minutes with a direct question before moving on.` };
+  if (negPct >= 10) return { color:'#f97316', label:'Group Emotion', desc:`Some discomfort detected at <strong>${negPct}%</strong>. Revisit that section with a simpler analogy or pause and ask "Does this make sense so far?"` };
+  if (neuPct >= 70) return { color:'#6b7280', label:'Group Emotion', desc:`The group was <strong>${neuPct}% neutral</strong> — calm but passive. Ask participants to explain a concept back in their own words to surface hidden confusion.` };
+  return { color:'#16a34a', label:'Group Emotion', desc:`Positive emotion at <strong>${posPct}%</strong> — the group showed genuine interest. Consolidate with a quick question to confirm key takeaways have landed.` };
+}
+function buildTip2(engagement) {
+  if (engagement < 50) return { color:'#e8440a', label:'Focus & Engagement', desc:`Group engagement was <strong>low (${engagement}/100)</strong>. Keep future sessions under 15 minutes, add a mid-session story or analogy, and close every segment with a specific question.` };
+  if (engagement < 75) return { color:'#ca8a04', label:'Focus & Engagement', desc:`Engagement was <strong>moderate (${engagement}/100)</strong>. Pause every few minutes and ask participants to summarise what was just covered — this doubles as a retention check.` };
+  return { color:'#16a34a', label:'Focus & Engagement', desc:`Engagement was <strong>strong (${engagement}/100)</strong> throughout. The pacing and structure are clearly effective — maintain this format.` };
+}
+function mu_fallbackInsightCards({ faceCount, engagement, frames, domLabel, tier, emotionSummary, insightCard }) {
+  const i1 = insightCard('Session Overview', `The session analyzed <strong>${frames.toLocaleString()} frames</strong> across <strong>${faceCount} detected person${faceCount!==1?'s':''}</strong>, with average group engagement of <strong>${engagement}/100</strong> (${tier}). Dominant emotion: <strong>${domLabel}</strong>. Distribution: ${emotionSummary||'data pending'}.`);
+  const engText = engagement >= 60 ? 'Strong engagement — content delivery appears effective. Sustain current pacing and interactivity.' : engagement >= 35 ? 'Moderate engagement. Consider a quick interactive element or show-of-hands to surface comprehension gaps.' : 'Low engagement signals suggest the group may be losing focus. A short break followed by Q&A is recommended.';
+  return i1 + insightCard('Engagement Recommendation', engText);
+}
+function mu_renderFallback(out, tips, { faceCount, engagement, frames, domLabel, tier, emotionSummary, posPct, negPct, neuPct, insightCard, tipCard }) {
+  if (out) out.innerHTML = mu_fallbackInsightCards({ faceCount, engagement, frames, domLabel, tier, emotionSummary, insightCard });
+  if (tips) tips.innerHTML = tipCard(buildTip1(negPct, neuPct, posPct)) + tipCard(buildTip2(engagement));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  mu_displaySessionNumber();
+  const track = document.getElementById('mu_distScrollbar');
+  if (track) track.addEventListener('scroll', mu_syncXAxisScroll, { passive: true });
+  mu_syncScrollbarWidth();
+  const c = document.getElementById('mu_distCanvas');
+  if (c) {
+    c.addEventListener('mousemove', mu_histHit);
+    c.addEventListener('mouseleave', () => { mu_histHoverFace = null; mu_histHoverEmo = null; const t = document.getElementById('mu_distTip'); if (t) t.style.display = 'none'; mu_renderHistogram(); });
+  }
+  mu_renderHistogram();
+});
+
+document.querySelectorAll('.nav-dropdown').forEach(dd => {
+  dd.querySelector('.nav-dropdown-trigger')?.addEventListener('click', e => {
+    e.stopPropagation(); const open = dd.classList.contains('open');
+    document.querySelectorAll('.nav-dropdown.open').forEach(o => o.classList.remove('open'));
+    if (!open) dd.classList.add('open');
+  });
+});
+document.addEventListener('click', () => { document.querySelectorAll('.nav-dropdown.open').forEach(o => o.classList.remove('open')); });
+window.addEventListener('resize', () => { mu_syncCanvas(); mu_renderHistogram(); });
+</script>
+</body>
+</html>

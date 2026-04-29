@@ -103,5 +103,3 @@ tracked_faces: Dict[int, Tuple[int, int]] = {}
 pred_buffer:    deque = deque(maxlen=SMOOTHING_FRAMES)
 emotion_buffer: deque = deque(maxlen=VOTING_FRAMES)
 ema_pred: Optional[np.ndarray] = None
-
-

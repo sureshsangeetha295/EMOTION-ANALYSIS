@@ -9,6 +9,48 @@
 <link rel="stylesheet" href="style/pages/faq.css"/>
 <script src="script/auth.js"></script>
 <script src="script/network-alert.js" defer></script>
+<style>
+/* ── Detect Dropdown ── */
+.nav-dropdown { position: relative; list-style: none; }
+.nav-dropdown-trigger {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 13px; color: var(--text2); text-decoration: none;
+  font-weight: 500; cursor: pointer;
+  background: none; border: none; padding: 0;
+  font-family: inherit; transition: color 0.15s;
+}
+.nav-dropdown-trigger:hover,
+.nav-dropdown-trigger.active { color: var(--accent); }
+.nav-dropdown-trigger svg.chevron {
+  width: 10px; height: 10px; stroke: currentColor;
+  fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+  transition: transform 0.2s;
+}
+.nav-dropdown.open .nav-dropdown-trigger svg.chevron { transform: rotate(180deg); }
+.nav-dropdown-menu {
+  display: none; position: absolute; top: calc(100% + 10px); left: 50%;
+  transform: translateX(-50%);
+  background: #fff; border: 1px solid rgba(232,68,10,0.12);
+  border-radius: 10px; padding: 6px; min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 1000;
+  flex-direction: column; gap: 2px;
+}
+.nav-dropdown.open .nav-dropdown-menu { display: flex; }
+.nav-dropdown-menu a {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 7px;
+  font-size: 12px; font-weight: 500; color: #6b6560;
+  text-decoration: none; transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.nav-dropdown-menu a:hover { background: rgba(232,68,10,0.05); color: #e8440a; }
+.nav-dropdown-menu a.active { color: #e8440a; }
+.nav-dropdown-menu a svg {
+  width: 13px; height: 13px; stroke: currentColor;
+  fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  flex-shrink: 0;
+}
+</style>
 </head>
 <body>
 
@@ -36,7 +78,22 @@
   <!-- Nav links (hidden on mobile) -->
   <ul class="nav-links">
     <li><a href="/home">Home</a></li>
-    <li><a href="/detect" onclick="if(typeof launchApp==='function')launchApp(event);else window.location.href='/detect';return false;">Detect</a></li>
+    <li class="nav-dropdown">
+      <button class="nav-dropdown-trigger">
+        Detect
+        <svg class="chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="nav-dropdown-menu">
+        <a href="/livecam">
+          <svg viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          Single User
+        </a>
+        <a href="/multiuser">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Multi User
+        </a>
+      </div>
+    </li>
     <li><a href="/faq" class="active">FAQ</a></li>
     <li><a href="/feedback">Feedback</a></li>
   </ul>
@@ -89,11 +146,13 @@
       </a>
     </li>
     <li>
-      <a href="#" onclick="launchApp(event)">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-          <circle cx="12" cy="13" r="3"/>
-        </svg>Detect
+      <a href="/livecam">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>Single User
+      </a>
+    </li>
+    <li>
+      <a href="/multiuser">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Multi User
       </a>
     </li>
     <li>
@@ -199,5 +258,25 @@
 
 
 <script src="script/pages/faq.js"></script>
+
+<script>
+/* ── Detect dropdown toggle ── */
+(function(){
+  document.querySelectorAll('.nav-dropdown').forEach(function(dd){
+    var trigger = dd.querySelector('.nav-dropdown-trigger');
+    if(!trigger) return;
+    trigger.addEventListener('click', function(e){
+      e.stopPropagation();
+      var isOpen = dd.classList.contains('open');
+      document.querySelectorAll('.nav-dropdown.open').forEach(function(o){ o.classList.remove('open'); });
+      if(!isOpen) dd.classList.add('open');
+    });
+  });
+  document.addEventListener('click', function(){
+    document.querySelectorAll('.nav-dropdown.open').forEach(function(o){ o.classList.remove('open'); });
+  });
+})();
+</script>
+
 </body>
 </html>
